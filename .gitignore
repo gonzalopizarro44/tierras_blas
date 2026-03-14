@@ -1,0 +1,19 @@
+# Odoo core
+odoo/
+
+# base de datos
+data/
+
+# logs
+logs/
+*.log
+
+# python
+__pycache__/
+*.pyc
+
+# vscode
+.vscode/
+
+# windows
+Thumbs.db
