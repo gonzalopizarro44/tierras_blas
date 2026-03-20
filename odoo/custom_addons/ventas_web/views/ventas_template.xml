@@ -1,0 +1,464 @@
+<odoo>
+    <template id="ventas_template" name="Panel de Ventas">
+
+        <t t-call="website.layout">
+
+            <!-- ESTILOS PERSONALIZADOS -->
+            <style>
+                :root {
+                    --brand-primary: #166534;
+                    --brand-primary-dark: #0f4620;
+                    --brand-light: #dcfce7;
+                    --brand-secondary: #6b7280;
+                    --brand-bg: #f9fafb;
+                    --brand-card: #ffffff;
+                    --brand-border: #e5e7eb;
+                    --brand-text: #1f2937;
+                    --brand-text-muted: #6b7280;
+                    --brand-shadow: 0 1px 3px rgba(0,0,0,.08);
+                    --brand-radius: 0.75rem;
+                }
+
+                .sales-page {
+                    background: var(--brand-bg);
+                    min-height: 100vh;
+                    padding: 2rem 0;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .sales-card {
+                    background: var(--brand-card);
+                    border-radius: var(--brand-radius);
+                    box-shadow: var(--brand-shadow);
+                    border: 1px solid var(--brand-border);
+                    padding: 1.5rem;
+                    margin-bottom: 1.5rem;
+                    transition: box-shadow 0.3s ease;
+                }
+
+                .sales-card:hover {
+                    box-shadow: 0 4px 6px rgba(0,0,0,.1);
+                }
+
+                .sales-title {
+                    font-size: 1.75rem;
+                    font-weight: 700;
+                    color: var(--brand-text);
+                    margin: 0;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .sales-subtitle {
+                    font-size: 0.9rem;
+                    color: var(--brand-text-muted);
+                    margin-top: 0.25rem;
+                }
+
+                .sales-stat {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.5rem 1rem;
+                    background: var(--brand-light);
+                    border-radius: var(--brand-radius);
+                    color: var(--brand-primary);
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                }
+
+                .sales-badge {
+                    display: inline-block;
+                    padding: 0.25em 0.65em;
+                    border-radius: 999px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                }
+
+                .badge-sale { background: var(--brand-light); color: var(--brand-primary); }
+                .badge-draft { background: #fef3c7; color: #78350f; }
+                .badge-cancel { background: #fee2e2; color: #7f1d1d; }
+
+                .sales-table thead th {
+                    background: var(--brand-bg);
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.03em;
+                    color: var(--brand-text-muted);
+                    font-size: 0.8rem;
+                    border-color: var(--brand-border);
+                    padding: 1rem 0.75rem;
+                    border-bottom: 2px solid var(--brand-border);
+                }
+
+                .sales-table tbody td {
+                    padding: 0.75rem;
+                    border-color: var(--brand-border);
+                    vertical-align: middle;
+                    color: var(--brand-text);
+                    font-size: 0.9rem;
+                }
+
+                .sales-table tbody tr:hover {
+                    background: var(--brand-bg);
+                }
+
+                .sales-btn-primary {
+                    background: var(--brand-primary);
+                    border: none;
+                    color: white;
+                    padding: 0.5rem 1rem;
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                    border-radius: var(--brand-radius);
+                    transition: all 0.2s;
+                    font-family: 'Inter', sans-serif;
+                    cursor: pointer;
+                }
+
+                .sales-btn-primary:hover {
+                    background: var(--brand-primary-dark);
+                    color: white;
+                    text-decoration: none;
+                    transform: translateY(-1px);
+                }
+
+                .sales-btn-sm {
+                    padding: 0.35rem 0.65rem;
+                    font-size: 0.8rem;
+                    margin: 0 0.25rem;
+                }
+
+                .sales-btn-success {
+                    background: #22c55e;
+                    color: white;
+                }
+
+                .sales-btn-success:hover {
+                    background: #16a34a;
+                    color: white;
+                    transform: translateY(-1px);
+                }
+
+                .sales-btn-danger {
+                    background: #f87171;
+                    color: white;
+                }
+
+                .sales-btn-danger:hover {
+                    background: #ef4444;
+                    color: white;
+                    transform: translateY(-1px);
+                }
+
+                .sales-filter-label {
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                    color: var(--brand-text-muted);
+                    text-transform: uppercase;
+                    letter-spacing: 0.025em;
+                    margin-bottom: 0.35rem;
+                }
+
+                .form-control, .form-select {
+                    border-color: var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    font-family: 'Inter', sans-serif;
+                    color: var(--brand-text);
+                    font-size: 0.9rem;
+                }
+
+                .form-control:focus, .form-select:focus {
+                    border-color: var(--brand-primary);
+                    box-shadow: 0 0 0 0.2rem rgba(22,101,52,.15);
+                }
+
+                .sales-empty {
+                    text-align: center;
+                    padding: 3rem 1rem;
+                    color: var(--brand-text-muted);
+                }
+
+                .sales-empty i {
+                    font-size: 3rem;
+                    margin-bottom: 1rem;
+                    display: block;
+                    color: #adb5bd;
+                }
+            </style>
+
+            <div class="sales-page">
+                <div class="container-lg">
+
+                    <!-- HEADER -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1 class="sales-title">Panel de Ventas</h1>
+                            <p class="sales-subtitle">Gestión integral de órdenes de venta</p>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center">
+                            <div class="sales-stat">
+                                <strong>Total:</strong>
+                                <t t-esc="total_ventas"/>
+                            </div>
+                            <a href="/ventas/nueva" class="btn sales-btn-primary">
+                                ➕ Registrar Nueva Venta
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- FILTROS AVANZADOS -->
+                    <div class="sales-card">
+                        <form method="GET" action="/ventas" class="row g-3 align-items-end">
+
+                            <!-- Cliente -->
+                            <div class="col-12 col-md-6 col-lg-2">
+                                <label class="sales-filter-label">Cliente</label>
+                                <input type="text" name="cliente" class="form-control form-control-sm"
+                                       placeholder="Nombre..."
+                                       t-att-value="filtros.get('cliente', '')"/>
+                            </div>
+
+                            <!-- Producto -->
+                            <div class="col-12 col-md-6 col-lg-2">
+                                <label class="sales-filter-label">Producto</label>
+                                <input type="text" name="producto" class="form-control form-control-sm"
+                                       placeholder="Nombre..."
+                                       t-att-value="filtros.get('producto', '')"/>
+                            </div>
+
+                            <!-- Categoría -->
+                            <div class="col-12 col-md-6 col-lg-2">
+                                <label class="sales-filter-label">Categoría</label>
+                                <select name="categoria" class="form-select form-select-sm">
+                                    <option value="">Todas</option>
+                                    <t t-foreach="categorias" t-as="cat">
+                                        <option t-att-value="cat.id"
+                                                t-att-selected="str(cat.id) == filtros.get('categoria', '')">
+                                            <t t-esc="cat.name"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+
+                            <!-- Estado -->
+                            <div class="col-12 col-md-6 col-lg-2">
+                                <label class="sales-filter-label">Estado</label>
+                                <select name="estado" class="form-select form-select-sm">
+                                    <option value="" t-att-selected="filtros.get('estado', '') == ''">Todos</option>
+                                    <option value="confirmada" t-att-selected="filtros.get('estado', '') == 'confirmada'">Confirmada</option>
+                                    <option value="cancelada" t-att-selected="filtros.get('estado', '') == 'cancelada'">Cancelada</option>
+                                </select>
+                            </div>
+
+                            <!-- Origen -->
+                            <div class="col-12 col-md-6 col-lg-2">
+                                <label class="sales-filter-label">Origen</label>
+                                <select name="origen" class="form-select form-select-sm">
+                                    <option value="">Todos</option>
+                                    <option value="admin" t-att-selected="filtros.get('origen', '') == 'admin'">Admin</option>
+                                    <option value="cliente_web" t-att-selected="filtros.get('origen', '') == 'cliente_web'">Cliente Web</option>
+                                    <option value="otro" t-att-selected="filtros.get('origen', '') == 'otro'">Otro</option>
+                                </select>
+                            </div>
+
+                            <!-- Botones -->
+                            <div class="col-12 col-lg-auto d-flex gap-2">
+                                <button type="submit" class="btn btn-sm btn-primary">🔍 Filtrar</button>
+                                <a href="/ventas" class="btn btn-sm btn-outline-secondary">✕ Limpiar</a>
+                            </div>
+
+                        </form>
+                    </div>
+
+                    <!-- TABLA DE VENTAS -->
+                    <div class="sales-card" style="overflow: hidden; padding: 0;">
+
+                        <t t-if="ventas">
+                            <div class="table-responsive">
+                                <table class="table sales-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Orden</th>
+                                            <th>Cliente</th>
+                                            <th>Productos</th>
+                                            <th>Cantidad</th>
+                                            <th>Total</th>
+                                            <th>Estado</th>
+                                            <th>Origen</th>
+                                            <th>Fecha</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="ventas" t-as="venta">
+                                            <tr>
+                                                <!-- Número de orden -->
+                                                <td style="font-weight: 600;">
+                                                    <t t-esc="venta.name"/>
+                                                </td>
+
+                                                <!-- Cliente -->
+                                                <td>
+                                                    <t t-esc="venta.partner_id.name"/>
+                                                </td>
+
+                                                <!-- Productos (resumen) -->
+                                                <td>
+                                                    <t t-foreach="venta.order_line" t-as="linea">
+                                                        <small><t t-esc="linea.product_id.name"/></small><br/>
+                                                    </t>
+                                                </td>
+
+                                                <!-- Cantidad total -->
+                                                <td>
+                                                    <t t-set="qty_total" t-value="sum(venta.order_line.mapped('product_uom_qty'))"/>
+                                                    <t t-esc="'%.2f' % qty_total"/>
+                                                </td>
+
+                                                <!-- Total (monto) -->
+                                                <td style="font-weight: 600;">
+                                                    $ <t t-esc="'%.2f' % venta.amount_total"/>
+                                                </td>
+
+                                                <!-- Estado (badge) -->
+                                                <td>
+                                                    <t t-if="venta.state == 'sale'">
+                                                        <span class="sales-badge badge-sale">✓ Confirmada</span>
+                                                    </t>
+                                                    <t t-elif="venta.state == 'draft'">
+                                                        <span class="sales-badge badge-draft">✎ Borrador</span>
+                                                    </t>
+                                                    <t t-elif="venta.state == 'cancel'">
+                                                        <span class="sales-badge badge-cancel">✕ Cancelada</span>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <span class="sales-badge badge-draft"><t t-esc="venta.state"/></span>
+                                                    </t>
+                                                </td>
+
+                                                <!-- Origen -->
+                                                <td>
+                                                    <small><t t-esc="dict([('admin', 'Admin'), ('cliente_web', 'Web'), ('integracion', 'API'), ('otro', 'Otro')]).get(venta.sales_origin, venta.sales_origin)"/></small>
+                                                </td>
+
+                                                <!-- Fecha -->
+                                                <td>
+                                                    <small><t t-esc="venta.date_order.strftime('%d/%m/%Y %H:%M')"/></small>
+                                                </td>
+
+                                                <!-- Acciones -->
+                                                <td>
+                                                    <t t-if="venta.state == 'draft'">
+                                                        <button type="button" class="btn sales-btn-sm sales-btn-success"
+                                                                onclick="confirmarVenta(this)" t-att-data-order-id="venta.id">
+                                                            ✓ Confirmar
+                                                        </button>
+                                                    </t>
+                                                    <t t-if="venta.state in ('draft', 'sale')">
+                                                        <button type="button" class="btn sales-btn-sm sales-btn-danger"
+                                                                onclick="cancelarVenta(this)" t-att-data-order-id="venta.id">
+                                                            ✕ Cancelar
+                                                        </button>
+                                                    </t>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+
+                        <!-- Estado vacío -->
+                        <t t-else="">
+                            <div class="sales-empty">
+                                <i>📭</i>
+                                <h5>No se encontraron ventas</h5>
+                                <p class="mb-0">Intenta ajustar los filtros o <a href="/ventas">limpiar la búsqueda</a>.</p>
+                            </div>
+                        </t>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- JAVASCRIPT -->
+            <script type="text/javascript">
+                function confirmarVenta(btn) {
+                    const orderId = btn.getAttribute('data-order-id');
+                    const txtBtn = btn.innerText;
+
+                    if (!confirm('¿Confirmar esta venta? Se descontará el stock.')) return;
+
+                    btn.disabled = true;
+                    btn.innerHTML = '⏳ Procesando...';
+
+                    fetch('/ventas/confirmar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            method: "call",
+                            params: { order_id: parseInt(orderId) }
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.result &amp;&amp; data.result.success) {
+                            alert(data.result.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (data.result ? data.result.message : 'Unknown'));
+                            btn.disabled = false;
+                            btn.innerText = txtBtn;
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Error de conexión');
+                        btn.disabled = false;
+                        btn.innerText = txtBtn;
+                    });
+                }
+
+                function cancelarVenta(btn) {
+                    const orderId = btn.getAttribute('data-order-id');
+                    const txtBtn = btn.innerText;
+
+                    if (!confirm('¿Cancelar esta venta?')) return;
+
+                    btn.disabled = true;
+                    btn.innerHTML = '⏳ Procesando...';
+
+                    fetch('/ventas/cancelar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            method: "call",
+                            params: { order_id: parseInt(orderId) }
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.result &amp;&amp; data.result.success) {
+                            alert(data.result.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (data.result ? data.result.message : 'Unknown'));
+                            btn.disabled = false;
+                            btn.innerText = txtBtn;
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Error de conexión');
+                        btn.disabled = false;
+                        btn.innerText = txtBtn;
+                    });
+                }
+            </script>
+
+        </t>
+    </template>
+</odoo>
