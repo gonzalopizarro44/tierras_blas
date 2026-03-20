@@ -1,0 +1,613 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="nueva_compra_template" name="Registrar Nueva Compra">
+
+        <t t-call="website.layout">
+
+            <!-- ESTILOS -->
+            <style>
+                :root {
+                    --brand-primary: #166534;
+                    --brand-primary-dark: #0f4620;
+                    --brand-light: #dcfce7;
+                    --brand-secondary: #6b7280;
+                    --brand-bg: #f9fafb;
+                    --brand-border: #e5e7eb;
+                    --brand-text: #1f2937;
+                    --brand-text-muted: #6b7280;
+                    --brand-shadow: 0 1px 3px rgba(0,0,0,.08);
+                    --brand-radius: 0.75rem;
+                }
+
+                .nc-page { background: var(--brand-bg); min-height: 100vh; padding: 2rem 0; font-family: 'Inter', sans-serif; }
+
+                .nc-card {
+                    background: white;
+                    border: 1px solid var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    padding: 2rem;
+                    box-shadow: var(--brand-shadow);
+                    margin-bottom: 2rem;
+                    transition: box-shadow 0.3s ease;
+                }
+
+                .nc-card:hover {
+                    box-shadow: 0 4px 6px rgba(0,0,0,.1);
+                }
+
+                .nc-title { 
+                    font-size: 1.5rem; 
+                    font-weight: 700; 
+                    margin: 0;
+                    color: var(--brand-text);
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .nc-section-title {
+                    font-size: 1rem;
+                    font-weight: 600;
+                    color: var(--brand-primary);
+                    border-bottom: 2px solid var(--brand-border);
+                    padding-bottom: 0.75rem;
+                    margin-bottom: 1rem;
+                }
+
+                .nc-label {
+                    font-weight: 600;
+                    font-size: 0.9rem;
+                    margin-bottom: 0.5rem;
+                    color: var(--brand-text);
+                }
+
+                .nc-warning-box {
+                    background: #fef3c7;
+                    border-left: 4px solid #d97706;
+                    padding: 1rem;
+                    border-radius: 0 var(--brand-radius) var(--brand-radius) 0;
+                    margin-bottom: 1.5rem;
+                    color: #78350f;
+                    font-size: 0.95rem;
+                }
+
+                .nc-linea {
+                    background: var(--brand-bg);
+                    border: 1px solid var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    padding: 1rem;
+                    margin-bottom: 1rem;
+                    position: relative;
+                }
+
+                .nc-linea-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 0.75rem;
+                    padding-bottom: 0.75rem;
+                    border-bottom: 1px solid var(--brand-border);
+                }
+
+                .nc-linea-producto {
+                    font-weight: 600;
+                    color: var(--brand-primary);
+                }
+
+                .nc-linea-close {
+                    cursor: pointer;
+                    color: #f87171;
+                    font-weight: bold;
+                    font-size: 1.2rem;
+                }
+
+                .nc-linea-close:hover { opacity: 0.7; }
+
+                .nc-linea-totales {
+                    display: grid;
+                    grid-template-columns: repeat(3, 1fr);
+                    gap: 1rem;
+                    margin-top: 0.75rem;
+                    padding-top: 0.75rem;
+                    border-top: 1px dotted var(--brand-border);
+                }
+
+                .nc-linea-total-item {
+                    text-align: center;
+                }
+
+                .nc-linea-total-label {
+                    font-size: 0.75rem;
+                    color: var(--brand-text-muted);
+                    text-transform: uppercase;
+                    font-weight: 600;
+                }
+
+                .nc-linea-total-value {
+                    font-size: 1.1rem;
+                    font-weight: 700;
+                    color: var(--brand-primary);
+                }
+
+                .nc-btn {
+                    display: inline-block;
+                    padding: 0.5rem 1rem;
+                    border: none;
+                    border-radius: var(--brand-radius);
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    text-align: center;
+                    text-decoration: none;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .nc-btn-primary {
+                    background: var(--brand-primary);
+                    color: white;
+                }
+
+                .nc-btn-primary:hover {
+                    background: var(--brand-primary-dark);
+                    color: white;
+                    transform: translateY(-1px);
+                }
+
+                .nc-btn-success {
+                    background: #22c55e;
+                    color: white;
+                }
+
+                .nc-btn-success:hover {
+                    background: #16a34a;
+                    color: white;
+                    transform: translateY(-1px);
+                }
+
+                .nc-btn-secondary {
+                    background: #6b7280;
+                    color: white;
+                }
+
+                .nc-btn-secondary:hover {
+                    background: #4b5563;
+                    color: white;
+                    transform: translateY(-1px);
+                }
+
+                .nc-btn-sm {
+                    padding: 0.35rem 0.65rem;
+                    font-size: 0.8rem;
+                }
+
+                .nc-btn-block {
+                    width: 100%;
+                }
+
+                .nc-resumen {
+                    background: var(--brand-light);
+                    border-left: 4px solid var(--brand-primary);
+                    padding: 1rem;
+                    border-radius: 0 var(--brand-radius) var(--brand-radius) 0;
+                    margin-bottom: 1rem;
+                }
+
+                .nc-resumen-item {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 0.5rem;
+                    font-size: 0.95rem;
+                    color: var(--brand-text);
+                }
+
+                .nc-resumen-item:last-child {
+                    margin-bottom: 0;
+                    border-top: 1px solid rgba(22,101,52,.3);
+                    padding-top: 0.5rem;
+                    font-size: 1.1rem;
+                    font-weight: 700;
+                    color: var(--brand-primary);
+                }
+
+                .nc-proveedor-nuevo {
+                    background: #fef3c7;
+                    border: 1px dashed #fbbf24;
+                    border-radius: var(--brand-radius);
+                    padding: 1rem;
+                    margin-top: 0.5rem;
+                }
+
+                .form-control, .form-select {
+                    border-color: var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    font-family: 'Inter', sans-serif;
+                    color: var(--brand-text);
+                    font-size: 0.9rem;
+                }
+
+                .form-control:focus, .form-select:focus {
+                    border-color: var(--brand-primary);
+                    box-shadow: 0 0 0 0.2rem rgba(22,101,52,.15);
+                }
+
+                .nc-formulario-dos-columnas {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 1rem;
+                }
+            </style>
+
+            <div class="nc-page">
+                <div class="container">
+
+                    <!-- HEADER -->
+                    <div class="mb-4">
+                        <a href="/compras" class="text-muted" style="text-decoration: none;">← Volver al Panel</a>
+                        <h1 class="nc-title mt-2">Registrar Nueva Compra</h1>
+                    </div>
+
+                    <!-- ADVERTENCIA: NO EDITABLE -->
+                    <div class="nc-warning-box">
+                        <strong>⚠️ IMPORTANTE:</strong> Una vez creada la compra, NO podrá ser editada. Verifique todos los datos antes de guardar.
+                    </div>
+
+                    <!-- SECCIÓN 1: PROVEEDOR -->
+                    <div class="nc-card">
+                        <h3 class="nc-section-title">1. Seleccionar Proveedor</h3>
+
+                        <div class="row">
+                            <div class="col-md-8">
+                                <label class="nc-label">Proveedor Existente</label>
+                                <select id="proveedorSelect" class="form-select form-select-lg" onchange="proveedorSeleccionado()">
+                                    <option value="">-- Seleccionar proveedor --</option>
+                                    <t t-foreach="proveedores" t-as="p">
+                                        <option t-att-value="p.id">
+                                            <t t-esc="p.name"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="nc-label">&amp;nbsp;</label>
+                                <button type="button" class="btn btn-outline-primary w-100" data-bs-toggle="collapse" data-bs-target="#nuevoProveedorForm">
+                                    ➕ Crear Nuevo Proveedor
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Formulario de nuevo proveedor (contraído) -->
+                        <div class="collapse mt-3" id="nuevoProveedorForm">
+                            <div class="nc-proveedor-nuevo">
+                                <h5 style="margin-bottom: 1rem;">Crear Nuevo Proveedor</h5>
+                                <div>
+                                    <label class="nc-label">Nombre</label>
+                                    <input type="text" id="nuevoProveedorNombre" class="form-control" placeholder="Nombre del proveedor"/>
+                                </div>
+                                <button type="button" class="btn nc-btn nc-btn-primary mt-3 w-100" onclick="crearProveedorRapido()">
+                                    Crear Proveedor
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Proveedor seleccionado (info) -->
+                        <div id="proveedorInfo" style="display: none; margin-top: 1.5rem; padding: 1rem; background: #d1e7dd; border-radius: var(--brand-radius); color: #0f3622;">
+                            Proveedor seleccionado: <strong id="proveedorInfoNombre"></strong>
+                        </div>
+
+                    </div>
+
+                    <!-- SECCIÓN 2: PRODUCTOS -->
+                    <div class="nc-card">
+                        <h3 class="nc-section-title">2. Agregar Productos</h3>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="nc-label">Producto</label>
+                                <select id="productoSelect" class="form-select">
+                                    <option value="">-- Seleccionar producto --</option>
+                                    <t t-foreach="productos" t-as="prod">
+                                        <option t-att-value="prod.id" t-att-data-price="prod.standard_price">
+                                            <t t-esc="prod.name"/> - $<t t-esc="'%.2f' % prod.standard_price"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="nc-label">Cantidad</label>
+                                <input type="number" id="productoCantidad" class="form-control" placeholder="1" value="1" min="1" step="0.01"/>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="nc-label">Precio Unitario</label>
+                                <input type="number" id="productoPrecio" class="form-control" placeholder="0.00" value="0.00" min="0" step="0.01"/>
+                            </div>
+
+                            <div class="col-md-2">
+                                <label class="nc-label">&amp;nbsp;</label>
+                                <button type="button" class="btn btn-primary w-100" onclick="agregarProducto()">
+                                    ➕ Agregar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Líneas de productos agregados -->
+                        <div id="lineasProductos">
+                            <p class="text-muted text-center py-4">No hay productos agregados aún</p>
+                        </div>
+
+                    </div>
+
+                    <!-- SECCIÓN 3: RESUMEN Y CONFIRMACIÓN -->
+                    <div class="nc-card">
+                        <h3 class="nc-section-title">3. Resumen y Guardar</h3>
+
+                        <!-- Resumen de totales -->
+                        <div class="nc-resumen" id="resumenTotales" style="display: none;">
+                            <div class="nc-resumen-item">
+                                <span>Cantidad de productos:</span>
+                                <strong id="resumenCantProductos">0</strong>
+                            </div>
+                            <div class="nc-resumen-item">
+                                <span>Cantidad total:</span>
+                                <strong id="resumenCantTotal">0</strong>
+                            </div>
+                            <div class="nc-resumen-item">
+                                <span>Total a Pagar:</span>
+                                <strong id="resumenTotal">$0.00</strong>
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn nc-btn nc-btn-success nc-btn-lg" onclick="guardarCompra()" style="flex: 1; padding: 0.75rem;">
+                                ✓ Registrar Compra
+                            </button>
+                            <a href="/compras" class="btn nc-btn nc-btn-secondary" style="padding: 0.75rem;">
+                                ← Cancelar
+                            </a>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- JAVASCRIPT -->
+            <script type="text/javascript">
+
+                // Estado interno de la compra
+                let compraData = {
+                    proveedor_id: null,
+                    lineas: []
+                };
+
+                // Productos disponibles (para búsqueda rápida)
+                const productosData = [
+                    <t t-foreach="productos" t-as="prod">
+                        { id: <t t-esc="prod.id"/>, nombre: "<t t-esc="prod.name.replace('&quot;', '\\&quot;')"/>", precio_costo: <t t-esc="prod.standard_price"/> },
+                    </t>
+                ];
+
+                function proveedorSeleccionado() {
+                    const select = document.getElementById('proveedorSelect');
+                    const proveedorId = select.value;
+
+                    if (proveedorId) {
+                        compraData.proveedor_id = parseInt(proveedorId);
+                        document.getElementById('proveedorInfo').style.display = 'block';
+                        document.getElementById('proveedorInfoNombre').innerText = select.options[select.selectedIndex].text;
+                    } else {
+                        compraData.proveedor_id = null;
+                        document.getElementById('proveedorInfo').style.display = 'none';
+                    }
+
+                    actualizarResumen();
+                }
+
+                function crearProveedorRapido() {
+                    const nombre = document.getElementById('nuevoProveedorNombre').value.trim();
+
+                    if (!nombre) {
+                        alert('Ingresa el nombre del proveedor');
+                        return;
+                    }
+
+                    fetch('/compras/crear_proveedor', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            method: "call",
+                            params: { nombre: nombre }
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.result &amp;&amp; data.result.success) {
+                            const select = document.getElementById('proveedorSelect');
+                            const option = document.createElement('option');
+                            option.value = data.result.id;
+                            option.text = data.result.nombre;
+                            select.appendChild(option);
+                            select.value = data.result.id;
+
+                            document.getElementById('nuevoProveedorNombre').value = '';
+                            document.getElementById('nuevoProveedorForm').classList.remove('show');
+
+                            proveedorSeleccionado();
+                            alert(data.result.message);
+                        } else {
+                            alert('Error: ' + (data.result ? data.result.message : 'Unknown'));
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Error de conexión');
+                    });
+                }
+
+                function agregarProducto() {
+                    const select = document.getElementById('productoSelect');
+                    const cantidad = parseFloat(document.getElementById('productoCantidad').value);
+                    const precioUnt = parseFloat(document.getElementById('productoPrecio').value);
+
+                    if (!select.value) {
+                        alert('Selecciona un producto');
+                        return;
+                    }
+
+                    if (cantidad &lt;= 0) {
+                        alert('La cantidad debe ser mayor a 0');
+                        return;
+                    }
+
+                    if (precioUnt &lt; 0) {
+                        alert('El precio no puede ser negativo');
+                        return;
+                    }
+
+                    const productId = parseInt(select.value);
+                    const producto = productosData.find(p => p.id === productId);
+
+                    if (!producto) {
+                        alert('Producto no encontrado');
+                        return;
+                    }
+
+                    const linea = {
+                        id: Date.now(),
+                        product_id: producto.id,
+                        product_nombre: producto.nombre,
+                        cantidad: cantidad,
+                        precio_unitario: precioUnt,
+                        subtotal: cantidad * precioUnt
+                    };
+
+                    compraData.lineas.push(linea);
+
+                    select.value = '';
+                    document.getElementById('productoCantidad').value = '1';
+                    document.getElementById('productoPrecio').value = '0.00';
+
+                    actualizarVistaLineas();
+                    actualizarResumen();
+                }
+
+                function eliminarLinea(id) {
+                    compraData.lineas = compraData.lineas.filter(l => l.id !== id);
+                    actualizarVistaLineas();
+                    actualizarResumen();
+                }
+
+                function actualizarVistaLineas() {
+                    const container = document.getElementById('lineasProductos');
+
+                    if (compraData.lineas.length === 0) {
+                        container.innerHTML = '&lt;p class="text-muted text-center py-4"&gt;No hay productos agregados aún&lt;/p&gt;';
+                        return;
+                    }
+
+                    container.innerHTML = compraData.lineas.map(linea => `
+                        &lt;div class="nc-linea"&gt;
+                            &lt;div class="nc-linea-header"&gt;
+                                &lt;div class="nc-linea-producto"&gt;${linea.product_nombre}&lt;/div&gt;
+                                &lt;div class="nc-linea-close" onclick="eliminarLinea(${linea.id})"&gt;✕&lt;/div&gt;
+                            &lt;/div&gt;
+                            &lt;div class="nc-linea-totales"&gt;
+                                &lt;div class="nc-linea-total-item"&gt;
+                                    &lt;div class="nc-linea-total-label"&gt;Cantidad&lt;/div&gt;
+                                    &lt;div class="nc-linea-total-value"&gt;${linea.cantidad.toFixed(2)}&lt;/div&gt;
+                                &lt;/div&gt;
+                                &lt;div class="nc-linea-total-item"&gt;
+                                    &lt;div class="nc-linea-total-label"&gt;Precio Unit.&lt;/div&gt;
+                                    &lt;div class="nc-linea-total-value"&gt;$${linea.precio_unitario.toFixed(2)}&lt;/div&gt;
+                                &lt;/div&gt;
+                                &lt;div class="nc-linea-total-item"&gt;
+                                    &lt;div class="nc-linea-total-label"&gt;Subtotal&lt;/div&gt;
+                                    &lt;div class="nc-linea-total-value"&gt;$${linea.subtotal.toFixed(2)}&lt;/div&gt;
+                                &lt;/div&gt;
+                            &lt;/div&gt;
+                        &lt;/div&gt;
+                    `).join('');
+                }
+
+                function actualizarResumen() {
+                    const cantProductos = compraData.lineas.length;
+                    const cantTotal = compraData.lineas.reduce((sum, l) => sum + l.cantidad, 0);
+                    const total = compraData.lineas.reduce((sum, l) => sum + l.subtotal, 0);
+
+                    document.getElementById('resumenCantProductos').innerText = cantProductos;
+                    document.getElementById('resumenCantTotal').innerText = cantTotal.toFixed(2);
+                    document.getElementById('resumenTotal').innerText = '$' + total.toFixed(2);
+
+                    const resumen = document.getElementById('resumenTotales');
+                    if (cantProductos > 0) {
+                        resumen.style.display = 'block';
+                    } else {
+                        resumen.style.display = 'none';
+                    }
+                }
+
+                function guardarCompra() {
+                    if (!compraData.proveedor_id) {
+                        alert('Selecciona un proveedor');
+                        return;
+                    }
+
+                    if (compraData.lineas.length === 0) {
+                        alert('Agrega al menos un producto');
+                        return;
+                    }
+
+                    const btn = event.target;
+                    const txtBtn = btn.innerText;
+                    btn.disabled = true;
+                    btn.innerHTML = '⏳ Procesando...';
+
+                    const lineas = compraData.lineas.map(l => ({
+                        product_id: l.product_id,
+                        cantidad: l.cantidad,
+                        precio_unitario: l.precio_unitario
+                    }));
+
+                    fetch('/compras/crear', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            method: "call",
+                            params: {
+                                proveedor_id: compraData.proveedor_id,
+                                lineas: lineas
+                            }
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.result &amp;&amp; data.result.success) {
+                            alert(data.result.message);
+                            window.location.href = data.result.url || '/compras';
+                        } else {
+                            alert('Error: ' + (data.result ? data.result.message : 'Unknown'));
+                            btn.disabled = false;
+                            btn.innerText = txtBtn;
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Error de conexión');
+                        btn.disabled = false;
+                        btn.innerText = txtBtn;
+                    });
+                }
+
+                actualizarResumen();
+
+            </script>
+
+        </t>
+
+    </template>
+
+</odoo>

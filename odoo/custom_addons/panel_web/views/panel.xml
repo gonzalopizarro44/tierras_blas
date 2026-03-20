@@ -1,0 +1,724 @@
+<odoo>
+
+    <template id="panel_template" name="Panel Administrativo">
+
+        <t t-call="website.layout">
+
+            <style>
+                :root {
+                    --brand-primary: #166534;
+                    --brand-primary-dark: #0f4620;
+                    --brand-light: #dcfce7;
+                    --brand-secondary: #6b7280;
+                    --brand-bg: #f9fafb;
+                    --brand-card: #ffffff;
+                    --brand-border: #e5e7eb;
+                    --brand-text: #1f2937;
+                    --brand-text-muted: #6b7280;
+                    --brand-shadow: 0 1px 3px rgba(0,0,0,.08);
+                    --brand-shadow-lg: 0 4px 6px rgba(0,0,0,.1);
+                    --brand-radius: 0.75rem;
+                }
+
+                body { background: var(--brand-bg); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif; }
+
+                .panel-header {
+                    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-dark) 100%);
+                    color: white;
+                    padding: 2rem;
+                    border-radius: 0 0 var(--brand-radius) var(--brand-radius);
+                    margin-bottom: 2rem;
+                    box-shadow: var(--brand-shadow-lg);
+                }
+
+                .panel-header h1 {
+                    font-size: 2rem;
+                    font-weight: 700;
+                    margin: 0;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .panel-header p {
+                    font-size: 0.95rem;
+                    opacity: 0.9;
+                    margin-top: 0.25rem;
+                }
+
+                .panel-card {
+                    background: var(--brand-card);
+                    border: 1px solid var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    box-shadow: var(--brand-shadow);
+                    overflow: hidden;
+                    margin-bottom: 1.5rem;
+                    transition: box-shadow 0.3s ease;
+                }
+
+                .panel-card:hover {
+                    box-shadow: var(--brand-shadow-lg);
+                }
+
+                .panel-card-title {
+                    font-size: 1.1rem;
+                    font-weight: 600;
+                    margin: 0;
+                    padding: 1rem;
+                    background: var(--brand-bg);
+                    border-bottom: 1px solid var(--brand-border);
+                    color: var(--brand-text);
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .panel-card-body {
+                    padding: 1.5rem;
+                }
+
+                /* TABS */
+                .nav-tabs {
+                    border-bottom: 2px solid var(--brand-border);
+                }
+
+                .nav-link {
+                    color: var(--brand-text-muted);
+                    border: none;
+                    border-bottom: 3px solid transparent;
+                    padding: 0.75rem 1.5rem;
+                    font-weight: 500;
+                    transition: all 0.2s;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .nav-link:hover {
+                    color: var(--brand-primary);
+                    border-bottom-color: var(--brand-border);
+                }
+
+                .nav-link.active {
+                    color: var(--brand-primary);
+                    border-bottom-color: var(--brand-primary);
+                    font-weight: 600;
+                }
+
+                /* MÉTRICAS */
+                .metric-card {
+                    background: white;
+                    border: 1px solid var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    padding: 1.5rem;
+                    text-align: center;
+                    transition: all 0.3s;
+                    cursor: pointer;
+                }
+
+                .metric-card:hover {
+                    transform: translateY(-4px);
+                    box-shadow: var(--brand-shadow-lg);
+                    border-color: var(--brand-primary);
+                }
+
+                .metric-icon {
+                    font-size: 2.5rem;
+                    margin-bottom: 0.5rem;
+                }
+
+                .metric-value {
+                    font-size: 1.75rem;
+                    font-weight: 700;
+                    color: var(--brand-primary);
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .metric-label {
+                    font-size: 0.8rem;
+                    color: var(--brand-text-muted);
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    margin-top: 0.5rem;
+                    font-weight: 500;
+                }
+
+                /* ALERTAS */
+                .alert-item {
+                    display: flex;
+                    align-items: flex-start;
+                    padding: 1rem;
+                    border-radius: var(--brand-radius);
+                    margin-bottom: 1rem;
+                    border-left: 4px solid transparent;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .alert-item.warning {
+                    background: #fef3c7;
+                    border-left-color: #d97706;
+                    color: #78350f;
+                }
+
+                .alert-item.danger {
+                    background: #fee2e2;
+                    border-left-color: var(--brand-primary);
+                    color: #7f1d1d;
+                }
+
+                .alert-item.info {
+                    background: #dbeafe;
+                    border-left-color: #0284c7;
+                    color: #0c2d6b;
+                }
+
+                .alert-icon {
+                    font-size: 1.5rem;
+                    margin-right: 1rem;
+                    flex-shrink: 0;
+                }
+
+                .alert-content h6 {
+                    margin: 0 0 0.25rem 0;
+                    font-weight: 600;
+                    color: var(--brand-text);
+                }
+
+                .alert-content p {
+                    margin: 0;
+                    font-size: 0.9rem;
+                }
+
+                /* INDICADORES */
+                .indicator-row {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                    gap: 1.5rem;
+                    margin-bottom: 2rem;
+                }
+
+                .indicator-box {
+                    background: white;
+                    border: 1px solid var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    padding: 1.5rem;
+                    transition: all 0.3s;
+                }
+
+                .indicator-box:hover {
+                    border-color: var(--brand-primary);
+                    box-shadow: var(--brand-shadow-lg);
+                }
+
+                .indicator-label {
+                    font-size: 0.8rem;
+                    color: var(--brand-text-muted);
+                    text-transform: uppercase;
+                    font-weight: 600;
+                    margin-bottom: 0.5rem;
+                    letter-spacing: 0.03em;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .indicator-value {
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                    color: var(--brand-primary);
+                    font-family: 'Inter', sans-serif;
+                }
+
+                /* TABLA TOP 5 */
+                .table-top {
+                    margin-bottom: 0;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .table-top thead th {
+                    background: var(--brand-bg);
+                    border-top: 1px solid var(--brand-border);
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    font-size: 0.8rem;
+                    letter-spacing: 0.03em;
+                    color: var(--brand-text-muted);
+                    padding: 1rem 0.75rem;
+                    border-bottom: 2px solid var(--brand-border);
+                }
+
+                .table-top tbody td {
+                    color: var(--brand-text);
+                    padding: 0.75rem;
+                    border-bottom: 1px solid var(--brand-border);
+                    font-size: 0.9rem;
+                }
+
+                .table-top tbody tr:hover {
+                    background: var(--brand-bg);
+                }
+
+                /* GRÁFICOS */
+                .chart-container {
+                    position: relative;
+                    height: 300px;
+                    margin-bottom: 2rem;
+                }
+
+                /* FILTROS */
+                .filter-section {
+                    background: white;
+                    border: 1px solid var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    padding: 1.5rem;
+                    margin-bottom: 2rem;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .filter-label {
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                    color: var(--brand-text-muted);
+                    text-transform: uppercase;
+                    letter-spacing: 0.03em;
+                    margin-bottom: 0.5rem;
+                }
+
+                .form-control, .form-select {
+                    border-color: var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    box-shadow: none;
+                    color: var(--brand-text);
+                    font-family: 'Inter', sans-serif;
+                    font-size: 0.9rem;
+                }
+
+                .form-control:focus, .form-select:focus {
+                    border-color: var(--brand-primary);
+                    box-shadow: 0 0 0 0.2rem rgba(22,101,52,.15);
+                }
+
+                .btn-primary {
+                    background: var(--brand-primary);
+                    border-color: var(--brand-primary);
+                    color: white;
+                    font-family: 'Inter', sans-serif;
+                    font-weight: 600;
+                    transition: all 0.2s;
+                }
+
+                .btn-primary:hover {
+                    background: var(--brand-primary-dark);
+                    border-color: var(--brand-primary-dark);
+                    color: white;
+                    transform: translateY(-1px);
+                }
+
+                .btn-outline-secondary {
+                    border-color: var(--brand-border);
+                    color: var(--brand-text-muted);
+                    font-family: 'Inter', sans-serif;
+                    font-weight: 600;
+                    transition: all 0.2s;
+                }
+
+                .btn-outline-secondary:hover {
+                    border-color: var(--brand-primary);
+                    color: var(--brand-primary);
+                    background-color: transparent;
+                }
+            </style>
+
+            <div class="container-liquid pt-4">
+
+                <!-- HEADER -->
+                <div class="panel-header">
+                    <h1>📊 Panel Administrativo</h1>
+                    <p>Dashboard ejecutivo del negocio en tiempo real</p>
+                </div>
+
+                <!-- FILTROS -->
+                <div class="filter-section mx-4">
+                    <form method="GET" action="/panel" class="row g-3">
+
+                        <div class="col-md-3">
+                            <label class="filter-label">Desde</label>
+                            <input type="date" name="fecha_desde" class="form-control" t-att-value="fecha_desde"/>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="filter-label">Hasta</label>
+                            <input type="date" name="fecha_hasta" class="form-control" t-att-value="fecha_hasta"/>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="filter-label">Categoría</label>
+                            <select name="categoria" class="form-select">
+                                <option value="">-- Todas --</option>
+                                <t t-foreach="categorias" t-as="cat">
+                                    <option t-att-value="cat.id" t-att-selected="str(cat.id) == categoria_id">
+                                        <t t-esc="cat.name"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3 d-flex align-items-end gap-2">
+                            <button type="submit" class="btn btn-primary w-100">🔍 Filtrar</button>
+                            <a href="/panel" class="btn btn-outline-secondary">✕ Limpiar</a>
+                        </div>
+
+                    </form>
+                </div>
+
+                <!-- TABS -->
+                <div class="mx-4">
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="metricas-tab" data-bs-toggle="tab" data-bs-target="#metricas" type="button" role="tab">
+                                📈 Métricas
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="indicadores-tab" data-bs-toggle="tab" data-bs-target="#indicadores" type="button" role="tab">
+                                📊 Indicadores
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="alertas-tab" data-bs-toggle="tab" data-bs-target="#alertas" type="button" role="tab">
+                                🚨 Alertas <span class="badge bg-danger ms-2" t-if="alertas" t-out="len(alertas)"/>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="graficos-tab" data-bs-toggle="tab" data-bs-target="#graficos" type="button" role="tab">
+                                📉 Gráficos
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- TAB CONTENT -->
+                    <div class="tab-content mt-4">
+
+                        <!-- TAB 1: MÉTRICAS -->
+                        <div class="tab-pane fade show active" id="metricas" role="tabpanel">
+
+                            <div class="row g-3 mb-4">
+
+                                <!-- Total Ventas -->
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="metric-card">
+                                        <div class="metric-icon">📦</div>
+                                        <div class="metric-value">
+                                            <t t-esc="metricas['total_ventas']"/>
+                                        </div>
+                                        <div class="metric-label">Total de Ventas</div>
+                                    </div>
+                                </div>
+
+                                <!-- Ingresos -->
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="metric-card">
+                                        <div class="metric-icon">💵</div>
+                                        <div class="metric-value">
+                                            $<t t-esc="'%.0f' % metricas['ingresos']"/>
+                                        </div>
+                                        <div class="metric-label">Ingresos Totales</div>
+                                    </div>
+                                </div>
+
+                                <!-- Total Compras -->
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="metric-card">
+                                        <div class="metric-icon">🛒</div>
+                                        <div class="metric-value">
+                                            <t t-esc="metricas['total_compras']"/>
+                                        </div>
+                                        <div class="metric-label">Total de Compras</div>
+                                    </div>
+                                </div>
+
+                                <!-- Gastos -->
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="metric-card">
+                                        <div class="metric-icon">💸</div>
+                                        <div class="metric-value">
+                                            $<t t-esc="'%.0f' % metricas['gastos']"/>
+                                        </div>
+                                        <div class="metric-label">Gastos Totales</div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="row g-3 mb-4">
+
+                                <!-- Ganancia Neta -->
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="metric-card" t-att-style="'background: ' + ('#d1f2eb' if metricas['ganancia_neta'] > 0 else '#f8d7da')">
+                                        <div class="metric-icon">
+                                            <t t-if="metricas['ganancia_neta'] > 0">✅</t>
+                                            <t t-else="">⚠️</t>
+                                        </div>
+                                        <div class="metric-value" t-att-style="'color: ' + ('#198754' if metricas['ganancia_neta'] > 0 else '#dc3545')">
+                                            $<t t-esc="'%.0f' % metricas['ganancia_neta']"/>
+                                        </div>
+                                        <div class="metric-label">Ganancia Neta</div>
+                                    </div>
+                                </div>
+
+                                <!-- Productos Activos -->
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="metric-card">
+                                        <div class="metric-icon">📋</div>
+                                        <div class="metric-value">
+                                            <t t-esc="metricas['productos_activos']"/>
+                                        </div>
+                                        <div class="metric-label">Productos Activos</div>
+                                    </div>
+                                </div>
+
+                                <!-- Sin Stock -->
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="metric-card" t-att-style="'background: ' + ('#f8d7da' if metricas['productos_sin_stock'] > 0 else '#d1f2eb')">
+                                        <div class="metric-icon">❌</div>
+                                        <div class="metric-value" t-att-style="'color: ' + ('#dc3545' if metricas['productos_sin_stock'] > 0 else '#198754')">
+                                            <t t-esc="metricas['productos_sin_stock']"/>
+                                        </div>
+                                        <div class="metric-label">Sin Stock</div>
+                                    </div>
+                                </div>
+
+                                <!-- Bajo Stock -->
+                                <div class="col-md-6 col-lg-3">
+                                    <div class="metric-card" t-att-style="'background: ' + ('#fff8dc' if metricas['productos_bajo_stock'] > 0 else '#d1f2eb')">
+                                        <div class="metric-icon">⚠️</div>
+                                        <div class="metric-value" t-att-style="'color: ' + ('#ffc107' if metricas['productos_bajo_stock'] > 0 else '#198754')">
+                                            <t t-esc="metricas['productos_bajo_stock']"/>
+                                        </div>
+                                        <div class="metric-label">Stock Bajo (&lt;10)</div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <!-- TAB 2: INDICADORES -->
+                        <div class="tab-pane fade" id="indicadores" role="tabpanel">
+
+                            <div class="row g-3 mb-4">
+
+                                <div class="col-md-4">
+                                    <div class="indicator-box">
+                                        <div class="indicator-label">Ticket Promedio</div>
+                                        <div class="indicator-value">
+                                            $<t t-esc="'%.2f' % indicadores.get('ticket_promedio', 0)"/>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="indicator-box">
+                                        <div class="indicator-label">Items Promedio/Venta</div>
+                                        <div class="indicator-value">
+                                            <t t-esc="indicadores.get('items_promedio', 0)"/>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="indicator-box">
+                                        <div class="indicator-label">Total de Órdenes</div>
+                                        <div class="indicator-value">
+                                            <t t-esc="indicadores.get('total_ordenes', 0)"/>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- TOP 5 PRODUCTOS -->
+                            <div class="panel-card">
+                                <h3 class="panel-card-title">🏆 Productos Más Vendidos (TOP 5)</h3>
+                                <div class="panel-card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-top">
+                                            <thead>
+                                                <tr>
+                                                    <th>Producto</th>
+                                                    <th>Categoría</th>
+                                                    <th class="text-end">Cantidad Vendida</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="indicadores.get('productos_top', [])" t-as="prod">
+                                                    <tr>
+                                                        <td><t t-esc="prod['nombre']"/></td>
+                                                        <td><t t-esc="prod['categoria']"/></td>
+                                                        <td class="text-end">
+                                                            <strong><t t-esc="'%.2f' % prod['cantidad']"/></strong>
+                                                        </td>
+                                                    </tr>
+                                                </t>
+                                                <t t-if="not indicadores.get('productos_top')" t-call="custom_empty_state">
+                                                    <t t-set="mensaje">Sin datos de productos vendidos</t>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TOP 5 CLIENTES -->
+                            <div class="panel-card">
+                                <h3 class="panel-card-title">👥 Clientes Principales (TOP 5)</h3>
+                                <div class="panel-card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-top">
+                                            <thead>
+                                                <tr>
+                                                    <th>Cliente</th>
+                                                    <th class="text-end">Monto Total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="indicadores.get('clientes_top', [])" t-as="cliente">
+                                                    <tr>
+                                                        <td><t t-esc="cliente['nombre']"/></td>
+                                                        <td class="text-end">
+                                                            <strong>$<t t-esc="'%.2f' % cliente['monto']"/></strong>
+                                                        </td>
+                                                    </tr>
+                                                </t>
+                                                <t t-if="not indicadores.get('clientes_top')" t-call="custom_empty_state">
+                                                    <t t-set="mensaje">Sin datos de clientes</t>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- TAB 3: ALERTAS -->
+                        <div class="tab-pane fade" id="alertas" role="tabpanel">
+
+                            <t t-if="alertas">
+                                <t t-foreach="alertas" t-as="alerta">
+                                    <div t-att-class="'alert-item ' + alerta['tipo']">
+                                        <div class="alert-icon"><t t-esc="alerta['icono']"/></div>
+                                        <div class="alert-content">
+                                            <h6><t t-esc="alerta['titulo']"/></h6>
+                                            <p><t t-esc="alerta['mensaje']"/></p>
+                                        </div>
+                                    </div>
+                                </t>
+                            </t>
+
+                            <t t-else="">
+                                <div class="alert-item" style="background: #d1f2eb; border-left-color: #198754; color: #0f3622;">
+                                    <div class="alert-icon">✅</div>
+                                    <div class="alert-content">
+                                        <h6>Todo está bien</h6>
+                                        <p>No hay alertas en este momento. Sistema funcionando correctamente.</p>
+                                    </div>
+                                </div>
+                            </t>
+
+                        </div>
+
+                        <!-- TAB 4: GRÁFICOS -->
+                        <div class="tab-pane fade" id="graficos" role="tabpanel">
+
+                            <div class="row">
+
+                                <div class="col-lg-6">
+                                    <div class="panel-card">
+                                        <h3 class="panel-card-title">📊 Ventas por Categoría</h3>
+                                        <div class="panel-card-body">
+                                            <div class="chart-container">
+                                                <canvas id="chartCategorias"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-lg-6">
+                                    <div class="panel-card">
+                                        <h3 class="panel-card-title">📈 Evolución de Ventas</h3>
+                                        <div class="panel-card-body">
+                                            <div class="chart-container">
+                                                <canvas id="chartEvolucion"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- SCRIPTS -->
+            <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+            <script type="text/javascript">
+                const graficos_data = <t t-out="graficos_json"/>;
+
+                // Gráfico 1: Ventas por Categoría (Barras)
+                const ctx1 = document.getElementById('chartCategorias').getContext('2d');
+                new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: graficos_data.ventas_por_categoria.labels,
+                        datasets: [{
+                            label: 'Monto ($)',
+                            data: graficos_data.ventas_por_categoria.data,
+                            backgroundColor: '#166534',
+                            borderColor: '#0f4620',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+
+                // Gráfico 2: Evolución de Ventas (Líneas)
+                const ctx2 = document.getElementById('chartEvolucion').getContext('2d');
+                new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: graficos_data.evolucion_ventas.labels,
+                        datasets: [{
+                            label: 'Ventas ($)',
+                            data: graficos_data.evolucion_ventas.data,
+                            borderColor: '#166534',
+                            backgroundColor: 'rgba(22,101,52,0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top' }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            </script>
+
+        </t>
+
+    </template>
+
+</odoo>

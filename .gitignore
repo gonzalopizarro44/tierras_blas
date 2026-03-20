@@ -1,19 +1,57 @@
-# Odoo core
-odoo/
+# =========================
+# Odoo
+# =========================
 
-# base de datos
-data/
+# Ignorar core de Odoo
+odoo/odoo/
 
-# logs
-logs/
+# Mantener addons propios
+!odoo/custom_addons/
+
+# Runtime
+odoo/filestore/
+odoo/sessions/
+
+# =========================
+# Base de datos
+# =========================
+data/*
+*.db
+*.sqlite3
+
+# =========================
+# Logs
+# =========================
 *.log
+logs/
 
-# python
+# =========================
+# Python
+# =========================
 __pycache__/
 *.pyc
 
-# vscode
-.vscode/
+# =========================
+# Entornos virtuales
+# =========================
+venv/
+.env/
 
-# windows
+# =========================
+# Config sensible
+# =========================
+config/odoo.conf
+
+# =========================
+# IDEs
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# OS basura
+# =========================
+.DS_Store
 Thumbs.db
+
+odoo.pid

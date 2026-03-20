@@ -1,0 +1,693 @@
+<odoo>
+
+    <template id="inventario_template" name="Inventario">
+
+        <t t-call="website.layout">
+
+            <!-- ── CSS personalizado ─────────────────────────────────── -->
+            <style>
+                :root {
+                    --brand-primary: #166534;
+                    --brand-primary-dark: #0f4620;
+                    --brand-light: #dcfce7;
+                    --brand-secondary: #6b7280;
+                    --brand-bg: #f9fafb;
+                    --brand-card: #ffffff;
+                    --brand-border: #e5e7eb;
+                    --brand-text: #1f2937;
+                    --brand-text-muted: #6b7280;
+                    --brand-shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+                    --brand-shadow-lg: 0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.06);
+                    --brand-radius: 0.75rem;
+                }
+                .inv-page { background: var(--brand-bg); min-height: 100vh; padding: 2rem 0; font-family: 'Inter', sans-serif; }
+                .inv-card {
+                    background: var(--brand-card);
+                    border-radius: var(--brand-radius);
+                    box-shadow: var(--brand-shadow);
+                    border: 1px solid var(--brand-border);
+                    padding: 1.5rem;
+                    margin-bottom: 1.5rem;
+                    transition: all 0.3s;
+                }
+                .inv-card:hover { box-shadow: var(--brand-shadow-lg); }
+                .inv-title {
+                    font-size: 1.75rem;
+                    font-weight: 700;
+                    color: var(--brand-text);
+                    margin: 0;
+                    font-family: 'Inter', sans-serif;
+                }
+                .inv-subtitle {
+                    font-size: 0.875rem;
+                    color: var(--brand-text-muted);
+                    margin-top: 0.25rem;
+                }
+                .inv-filter-label {
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                    color: var(--brand-text-muted);
+                    text-transform: uppercase;
+                    letter-spacing: 0.025em;
+                    margin-bottom: 0.35rem;
+                }
+                .inv-table thead th {
+                    background: var(--brand-bg);
+                    font-size: 0.78rem;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.03em;
+                    color: var(--brand-text-muted);
+                    border-bottom: 2px solid var(--brand-border);
+                    white-space: nowrap;
+                    padding: 0.75rem 0.65rem;
+                }
+                .inv-table tbody td {
+                    vertical-align: middle;
+                    padding: 0.65rem;
+                    font-size: 0.9rem;
+                    color: var(--brand-text);
+                    border-bottom: 1px solid var(--brand-border);
+                }
+                .inv-table tbody tr:hover { background: var(--brand-bg); }
+                
+                /* Estilos para celdas editables */
+                .editable-cell {
+                    cursor: pointer;
+                    position: relative;
+                    transition: background 0.2s;
+                }
+                .editable-cell:hover {
+                    background-color: rgba(22, 101, 52, 0.05) !important;
+                }
+                .editable-cell::after {
+                    content: '✎';
+                    position: absolute;
+                    right: 8px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    font-size: 0.75rem;
+                    color: var(--brand-primary);
+                    opacity: 0;
+                    transition: opacity 0.2s;
+                }
+                .editable-cell:hover::after {
+                    opacity: 0.6;
+                }
+
+                .inv-img-thumb {
+                    width: 44px; height: 44px;
+                    object-fit: cover;
+                    border-radius: 0.5rem;
+                    border: 1px solid var(--brand-border);
+                }
+                .inv-img-placeholder {
+                    width: 44px; height: 44px;
+                    border-radius: 0.5rem;
+                    background: var(--brand-light);
+                    display: flex; align-items: center; justify-content: center;
+                    color: var(--brand-text-muted); font-size: 1.1rem;
+                }
+                .inv-btn-primary {
+                    background: var(--brand-primary);
+                    border: none;
+                    color: #fff;
+                    border-radius: 0.5rem;
+                    padding: 0.5rem 1.25rem;
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                    font-family: 'Inter', sans-serif;
+                    transition: all 0.2s;
+                }
+                .inv-btn-primary:hover { 
+                    background: var(--brand-primary-dark);
+                    color: #fff;
+                    transform: translateY(-1px);
+                    box-shadow: var(--brand-shadow-lg);
+                }
+                .inv-btn-outline {
+                    background: transparent;
+                    border: 1px solid var(--brand-border);
+                    color: var(--brand-text-muted);
+                    border-radius: 0.5rem;
+                    padding: 0.5rem 1.25rem;
+                    font-weight: 500;
+                    font-size: 0.875rem;
+                    font-family: 'Inter', sans-serif;
+                    transition: all 0.2s;
+                }
+                .inv-btn-outline:hover { 
+                    border-color: var(--brand-primary);
+                    color: var(--brand-primary);
+                    background: rgba(22, 101, 52, 0.02);
+                }
+                .inv-badge {
+                    display: inline-block;
+                    padding: 0.25em 0.65em;
+                    border-radius: 999px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                }
+                .inv-badge-green  { background: #dcfce7; color: #166534; }
+                .inv-badge-yellow { background: #fef3c7; color: #854d0e; }
+                .inv-badge-red    { background: #fee2e2; color: #991b1b; }
+                .inv-badge-gray   { background: var(--brand-bg); color: var(--brand-text-muted); }
+                .inv-stat-box {
+                    display: inline-flex; align-items: center; gap: 0.5rem;
+                    background: var(--brand-light); border-radius: 0.5rem;
+                    padding: 0.4rem 1rem; font-size: 0.875rem;
+                    color: var(--brand-primary); font-weight: 600;
+                }
+                .form-control:focus, .form-select:focus {
+                    border-color: var(--brand-primary);
+                    box-shadow: 0 0 0 0.2rem rgba(22,101,52,.15);
+                }
+                .inv-empty-state {
+                    text-align: center; padding: 3rem 1rem; color: var(--brand-text-muted);
+                }
+                .inv-empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; color: var(--brand-border); }
+                
+                /* Estilo para los mensajes de ayuda en modales */
+                .modal-hint {
+                    font-size: 0.8rem;
+                    color: var(--brand-text-muted);
+                    background: var(--brand-bg);
+                    padding: 0.75rem;
+                    border-left: 3px solid var(--brand-primary);
+                    border-radius: 0 0.25rem 0.25rem 0;
+                    margin-top: 1rem;
+                }
+            </style>
+
+            <div class="inv-page">
+                <div class="container-xl">
+
+                    <!-- ── Header ────────────────────────────────────── -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1 class="inv-title">Panel de Inventario</h1>
+                            <p class="inv-subtitle">Gestión y consulta de productos</p>
+                        </div>
+                        <div class="d-flex gap-2 mt-2 mt-md-0">
+                            <div class="inv-stat-box">
+                                <span>Productos:</span>
+                                <strong t-esc="total_productos"/>
+                            </div>
+                            <button type="button" class="btn inv-btn-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#crudWarningModal">
+                                + Crear Producto
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ── Filtros ───────────────────────────────────── -->
+                    <div class="inv-card">
+                        <form method="GET" action="/inventario" class="row g-3 align-items-end">
+
+                            <!-- Nombre -->
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <label class="inv-filter-label">Nombre</label>
+                                <input type="text" name="nombre" class="form-control form-control-sm"
+                                       placeholder="Buscar por nombre..."
+                                       t-att-value="filtros.get('f_nombre', '')"/>
+                            </div>
+
+                            <!-- Proveedor -->
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <label class="inv-filter-label">Proveedor</label>
+                                <input type="text" name="proveedor" class="form-control form-control-sm"
+                                       placeholder="Buscar por proveedor..."
+                                       t-att-value="filtros.get('f_proveedor', '')"/>
+                            </div>
+
+                            <!-- Categoría -->
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <label class="inv-filter-label">Categoría</label>
+                                <select name="categoria" class="form-select form-select-sm">
+                                    <option value="">Todas</option>
+                                    <t t-foreach="categorias" t-as="cat">
+                                        <option t-att-value="cat.id"
+                                                t-att-selected="str(cat.id) == filtros.get('f_categoria', '')">
+                                            <t t-esc="cat.display_name"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+
+                            <!-- Estado -->
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <label class="inv-filter-label">Estado</label>
+                                <select name="estado" class="form-select form-select-sm">
+                                    <option value="activo"
+                                            t-att-selected="filtros.get('f_estado', 'activo') == 'activo'">
+                                        Activos
+                                    </option>
+                                    <option value="inactivo"
+                                            t-att-selected="filtros.get('f_estado', '') == 'inactivo'">
+                                        Inactivos
+                                    </option>
+                                    <option value="todos"
+                                            t-att-selected="filtros.get('f_estado', '') == 'todos'">
+                                        Todos
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Cantidad + operador -->
+                            <div class="col-6 col-md-3 col-lg-2">
+                                <label class="inv-filter-label">Cantidad</label>
+                                <input type="number" name="cantidad" class="form-control form-control-sm"
+                                       placeholder="0" step="any"
+                                       t-att-value="filtros.get('f_cantidad', '')"/>
+                            </div>
+                            <div class="col-6 col-md-3 col-lg-1">
+                                <label class="inv-filter-label">Op.</label>
+                                <select name="cantidad_op" class="form-select form-select-sm">
+                                    <option value="exact"
+                                            t-att-selected="filtros.get('f_cantidad_op', 'exact') == 'exact'">
+                                        =
+                                    </option>
+                                    <option value="lt"
+                                            t-att-selected="filtros.get('f_cantidad_op', '') == 'lt'">
+                                        &lt;
+                                    </option>
+                                    <option value="gt"
+                                            t-att-selected="filtros.get('f_cantidad_op', '') == 'gt'">
+                                        &gt;
+                                    </option>
+                                </select>
+                            </div>
+
+                            <!-- Precio costo -->
+                            <div class="col-6 col-md-3 col-lg-2">
+                                <label class="inv-filter-label">Precio costo ≥</label>
+                                <input type="number" name="precio_costo" class="form-control form-control-sm"
+                                       placeholder="0.00" step="0.01"
+                                       t-att-value="filtros.get('f_precio_costo', '')"/>
+                            </div>
+
+                            <!-- Precio venta -->
+                            <div class="col-6 col-md-3 col-lg-2">
+                                <label class="inv-filter-label">Precio venta ≥</label>
+                                <input type="number" name="precio_venta" class="form-control form-control-sm"
+                                       placeholder="0.00" step="0.01"
+                                       t-att-value="filtros.get('f_precio_venta', '')"/>
+                            </div>
+
+                            <!-- Botones -->
+                            <div class="col-12 col-lg-5 d-flex gap-2 justify-content-lg-end">
+                                <button type="submit" class="btn inv-btn-primary">
+                                    🔍 Buscar
+                                </button>
+                                <a href="/inventario" class="btn inv-btn-outline">
+                                    ✕ Limpiar
+                                </a>
+                            </div>
+
+                        </form>
+                    </div>
+
+                    <!-- ── Tabla de productos ────────────────────────── -->
+                    <div class="inv-card" style="padding: 0; overflow: hidden;">
+
+                        <t t-if="productos">
+                            <div class="table-responsive">
+                                <table class="table inv-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Imagen</th>
+                                            <th>Nombre</th>
+                                            <th>Descripción</th>
+                                            <th>Categoría</th>
+                                            <th>Stock</th>
+                                            <th>Precio Costo</th>
+                                            <th>Precio Sale</th>
+                                            <th>Impuestos</th>
+                                            <th>Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="productos" t-as="producto">
+                                            <tr>
+                                                <!-- Imagen (No editable) -->
+                                                <td>
+                                                    <t t-if="producto.image_128">
+                                                        <img t-att-src="'data:image/png;base64,' + producto.image_128.decode('utf-8')"
+                                                              class="inv-img-thumb"
+                                                              alt="Producto"/>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <div class="inv-img-placeholder">📷</div>
+                                                    </t>
+                                                </td>
+
+                                                <!-- Nombre -->
+                                                <td class="editable-cell" 
+                                                    data-field="name" 
+                                                    data-field-label="Nombre"
+                                                    t-att-data-id="producto.id"
+                                                    t-att-data-value="producto.name">
+                                                    <strong t-esc="producto.name"/>
+                                                </td>
+
+                                                <!-- Descripción (description_ecommerce) -->
+                                                <td class="editable-cell" 
+                                                    data-field="description_ecommerce" 
+                                                    data-field-label="Descripción E-commerce"
+                                                    t-att-data-id="producto.id"
+                                                    t-att-data-value="producto.description_ecommerce">
+                                                    <t t-if="producto.description_ecommerce">
+                                                        <span t-esc="producto.description_ecommerce[:60]"/>
+                                                        <t t-if="len(producto.description_ecommerce or '') > 60">…</t>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <span class="text-muted">—</span>
+                                                    </t>
+                                                </td>
+
+                                                <!-- Categoría -->
+                                                <td class="editable-cell" 
+                                                    data-field="categ_id" 
+                                                    data-field-label="Categoría"
+                                                    t-att-data-id="producto.id"
+                                                    t-att-data-value="producto.categ_id.id">
+                                                    <span class="inv-badge inv-badge-gray"
+                                                          t-esc="producto.categ_id.name"/>
+                                                </td>
+
+                                                <!-- Stock -->
+                                                <td class="editable-cell" 
+                                                    data-field="qty_available" 
+                                                    data-field-label="Stock (Cantidad)"
+                                                    t-att-data-id="producto.id"
+                                                    t-att-data-value="producto.qty_available">
+                                                    <t t-set="qty" t-value="producto.qty_available"/>
+                                                    <t t-if="qty &lt;= 0">
+                                                        <span class="inv-badge inv-badge-red"
+                                                              t-esc="'%.2f' % qty"/>
+                                                    </t>
+                                                    <t t-elif="qty &lt;= 5">
+                                                        <span class="inv-badge inv-badge-yellow"
+                                                              t-esc="'%.2f' % qty"/>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <span class="inv-badge inv-badge-green"
+                                                              t-esc="'%.2f' % qty"/>
+                                                    </t>
+                                                </td>
+
+                                                <!-- Precio costo -->
+                                                <td class="editable-cell" 
+                                                    data-field="standard_price" 
+                                                    data-field-label="Precio de Costo"
+                                                    t-att-data-id="producto.id"
+                                                    t-att-data-value="producto.standard_price">
+                                                    $ <t t-esc="'%.2f' % producto.standard_price"/>
+                                                </td>
+
+                                                <!-- Precio venta -->
+                                                <td class="editable-cell" 
+                                                    data-field="list_price" 
+                                                    data-field-label="Precio de Venta"
+                                                    t-att-data-id="producto.id"
+                                                    t-att-data-value="producto.list_price">
+                                                    $ <t t-esc="'%.2f' % producto.list_price"/>
+                                                </td>
+
+                                                <!-- Impuestos (No editable según indicación) -->
+                                                <td>
+                                                    <t t-if="producto.taxes_id">
+                                                        <t t-esc="', '.join(producto.taxes_id.mapped('name'))"/>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <span class="text-muted">—</span>
+                                                    </t>
+                                                </td>
+
+                                                <!-- Estado -->
+                                                <td class="editable-cell" 
+                                                    data-field="active" 
+                                                    data-field-label="Estado Activo"
+                                                    t-att-data-id="producto.id"
+                                                    t-att-data-value="'true' if producto.active else 'false'">
+                                                    <t t-if="producto.active">
+                                                        <span class="inv-badge inv-badge-green">Activo</span>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <span class="inv-badge inv-badge-red">Inactivo</span>
+                                                    </t>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+
+                        <!-- Estado vacío -->
+                        <t t-else="">
+                            <div class="inv-empty-state">
+                                <i>📭</i>
+                                <h5>No se encontraron productos</h5>
+                                <p class="mb-0">Intenta ajustar los filtros o <a href="/inventario">limpiar la búsqueda</a>.</p>
+                            </div>
+                        </t>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ── Modal 1: Confirmación ─────────────────────────────── -->
+            <div class="modal fade" id="confirmUpdateModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content" style="border-radius: var(--brand-radius); border: none; box-shadow: var(--brand-shadow-lg);">
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title fw-bold" style="color: var(--brand-text);">Confirmación</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body text-center py-4">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">🤔</div>
+                            <h5 id="confirmModalTitle" class="mb-3">¿Desea realizar cambios sobre este campo?</h5>
+                            <p class="text-muted small" id="confirmModalField"></p>
+                        </div>
+                        <div class="modal-footer border-0 justify-content-center pt-0 pb-4">
+                            <button type="button" class="btn inv-btn-outline" data-bs-dismiss="modal" style="min-width: 140px;">No, volver atrás</button>
+                            <button type="button" class="btn inv-btn-primary" id="btnGoToEdit" style="min-width: 140px;">Si, realizar cambios</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Modal 2: Edición Dinámica ────────────────────────── -->
+            <div class="modal fade" id="editFieldModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content" style="border-radius: var(--brand-radius); border: none; box-shadow: var(--brand-shadow-lg);">
+                        <div class="modal-header border-0 pb-0">
+                            <h5 class="modal-title fw-bold" id="editModalLabel">Actualizar Campo</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                        </div>
+                        <div class="modal-body py-4">
+                            <div id="editFieldContainer">
+                                <!-- El contenido se inyecta por JS -->
+                            </div>
+                            <div id="editFieldHint" class="modal-hint d-none">
+                                <!-- Mensajes de advertencia dinámicos -->
+                            </div>
+                        </div>
+                        <div class="modal-footer border-0 pt-0">
+                            <button type="button" class="btn inv-btn-outline" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn inv-btn-primary" id="btnSaveChanges">Guardar cambios</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Modal de advertencia CRUD (Creación) ──────────────── -->
+            <div class="modal fade" id="crudWarningModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content" style="border-radius: var(--brand-radius); border: none; box-shadow: var(--brand-shadow-lg);">
+                        <div class="modal-header" style="border-bottom: 1px solid var(--brand-border);">
+                            <h5 class="modal-title fw-bold" style="color: var(--brand-text);">⚠️ Acción restringida</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"/>
+                        </div>
+                        <div class="modal-body text-center py-4">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">🖥️</div>
+                            <p class="fw-bold mb-1" style="font-size: 1.05rem; color: var(--brand-text);">
+                                Esta acción se debe hacer desde el panel de Odoo
+                            </p>
+                            <p class="text-muted small">
+                                La creación de nuevos productos requiere acceso total al backend para configurar atributos contables y de logística compleja.
+                            </p>
+                        </div>
+                        <div class="modal-footer border-top-0 justify-content-center pb-4">
+                            <button type="button" class="btn inv-btn-primary" data-bs-dismiss="modal" style="min-width: 140px;">Entendido</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── JavaScript Integrado ──────────────────────────────── -->
+            <script type="text/javascript">
+                document.addEventListener('DOMContentLoaded', function() {
+                    let currentProductId = null;
+                    let currentField = null;
+                    let currentFieldLabel = null;
+                    let currentValue = null;
+
+                    const confirmModal = new bootstrap.Modal(document.getElementById('confirmUpdateModal'));
+                    const editModal = new bootstrap.Modal(document.getElementById('editFieldModal'));
+
+                    // Colección de categorías para el select (inyectada desde Odoo)
+                    const categorias = [
+                        <t t-foreach="categorias" t-as="c">
+                            { id: <t t-esc="c.id"/>, name: "<t t-esc="c.display_name.replace('&amp;quot;', '\\&amp;quot;')"/>" },
+                        </t>
+                    ];
+
+                    // 1. Detectar click en celda editable
+                    document.querySelectorAll('.editable-cell').forEach(cell => {
+                        cell.addEventListener('click', function() {
+                            currentProductId = this.getAttribute('data-id');
+                            currentField = this.getAttribute('data-field');
+                            currentFieldLabel = this.getAttribute('data-field-label');
+                            currentValue = this.getAttribute('data-value');
+
+                            document.getElementById('confirmModalField').innerText = `Campo seleccionado: ${currentFieldLabel}`;
+                            confirmModal.show();
+                        });
+                    });
+
+                    // 2. Click en "Si, realizar cambios"
+                    document.getElementById('btnGoToEdit').addEventListener('click', function() {
+                        confirmModal.hide();
+                        prepareEditModal();
+                        editModal.show();
+                    });
+
+                    // 3. Preparar el Modal de Edición según el campo
+                    function prepareEditModal() {
+                        const container = document.getElementById('editFieldContainer');
+                        const label = document.getElementById('editModalLabel');
+                        const hint = document.getElementById('editFieldHint');
+                        
+                        label.innerText = `Actualizar ${currentFieldLabel}`;
+                        container.innerHTML = '';
+                        hint.classList.add('d-none');
+                        hint.innerText = '';
+
+                        if (currentField === 'name') {
+                            container.innerHTML = `
+                                <label class="form-label small fw-bold">Nuevo Nombre</label>
+                                <input type="text" id="editInput" class="form-control" value="${currentValue}" required="required">
+                            `;
+                        } else if (currentField === 'description_ecommerce') {
+                            container.innerHTML = `
+                                <label class="form-label small fw-bold">Descripción E-commerce</label>
+                                <textarea id="editInput" class="form-control" rows="5" required="required">${currentValue === 'None' ? '' : currentValue}</textarea>
+                            `;
+                        } else if (currentField === 'categ_id') {
+                            let options = categorias.map(c => 
+                                `<option value="${c.id}" ${c.id == currentValue ? 'selected' : ''}>${c.name}</option>`
+                            ).join('');
+                            container.innerHTML = `
+                                <label class="form-label small fw-bold">Seleccionar Categoría</label>
+                                <select id="editInput" class="form-select">${options}</select>
+                            `;
+                        } else if (currentField === 'qty_available') {
+                            container.innerHTML = `
+                                <label class="form-label small fw-bold">Nueva Cantidad de Stock</label>
+                                <input type="number" id="editInput" class="form-control" value="${currentValue}" step="0.01" min="0">
+                            `;
+                            hint.innerHTML = "<strong>Nota:</strong> Esta acción realizará un ajuste manual de inventario en la ubicación principal.";
+                            hint.classList.remove('d-none');
+                        } else if (currentField === 'standard_price') {
+                            container.innerHTML = `
+                                <label class="form-label small fw-bold">Nuevo Precio de Costo</label>
+                                <input type="number" id="editInput" class="form-control" value="${currentValue}" step="0.01" min="0">
+                            `;
+                            hint.innerHTML = "⚠️ <strong>Ten en cuenta:</strong> Al modificar el precio de costo, se recomienda revisar luego el precio de venta para mantener tus márgenes.";
+                            hint.classList.remove('d-none');
+                        } else if (currentField === 'list_price') {
+                            container.innerHTML = `
+                                <label class="form-label small fw-bold">Nuevo Precio de Venta</label>
+                                <input type="number" id="editInput" class="form-control" value="${currentValue}" step="0.01" min="0">
+                            `;
+                            hint.innerHTML = "⚖️ <strong>Información:</strong> Recuerda considerar el precio de costo, impuestos (IVA) y tu margen de ganancia deseado.";
+                            hint.classList.remove('d-none');
+                        } else if (currentField === 'active') {
+                            let isActive = currentValue === 'true';
+                            container.innerHTML = `
+                                <div class="form-check form-switch py-2">
+                                    <input class="form-check-input" type="checkbox" id="editInput" ${isActive ? 'checked' : ''}>
+                                    <label class="form-check-label fw-bold" for="editInput">Producto Visible en Tienda</label>
+                                </div>
+                            `;
+                        }
+                    }
+
+                    // 4. Guardar cambios (AJAX JSON-RPC)
+                    document.getElementById('btnSaveChanges').addEventListener('click', function() {
+                        const input = document.getElementById('editInput');
+                        let newValue = null;
+
+                        if (currentField === 'active') {
+                            newValue = input.checked;
+                        } else {
+                            newValue = input.value;
+                        }
+
+                        // Validación básica
+                        if (['name', 'qty_available', 'standard_price', 'list_price'].includes(currentField) && !newValue && newValue !== 0) {
+                            alert('Este campo es obligatorio.');
+                            return;
+                        }
+
+                        if (currentField === 'qty_available' && parseFloat(newValue) < 0) {
+                            alert('La cantidad no puede ser negativa.');
+                            return;
+                        }
+
+                        const btn = this;
+                        btn.disabled = true;
+                        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Guardando...';
+
+                        // Llamada AJAX a Odoo
+                        fetch('/inventario/update_field', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                jsonrpc: "2.0",
+                                method: "call",
+                                params: {
+                                    product_id: currentProductId,
+                                    field: currentField,
+                                    value: newValue
+                                }
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.result && data.result.success) {
+                                // Éxito: recargar la página para ver cambios
+                                window.location.reload();
+                            } else {
+                                alert('Error: ' + (data.result ? data.result.message : 'Error desconocido'));
+                                btn.disabled = false;
+                                btn.innerText = 'Guardar cambios';
+                            }
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            alert('Error de conexión al servidor.');
+                            btn.disabled = false;
+                            btn.innerText = 'Guardar cambios';
+                        });
+                    });
+                });
+            </script>
+
+        </t>
+    </template>
+</odoo>
