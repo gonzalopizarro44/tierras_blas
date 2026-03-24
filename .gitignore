@@ -55,3 +55,7 @@ config/odoo.conf
 Thumbs.db
 
 odoo.pid
+# =========================
+# no subir backups ni archivos temporales
+# =========================
+*.bak
