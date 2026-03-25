@@ -508,9 +508,9 @@
             <div class="modal fade" id="crudWarningModal" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content" style="border-radius: var(--brand-radius); border: none; box-shadow: var(--brand-shadow-lg);">
-                        <div class="modal-header" style="border-bottom: 1px solid var(--brand-border);">
+                        <div class="modal-header border-0 pb-0">
                             <h5 class="modal-title fw-bold" style="color: var(--brand-text);">⚠️ Acción restringida</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"/>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                         </div>
                         <div class="modal-body text-center py-4">
                             <div style="font-size: 3rem; margin-bottom: 1rem;">🖥️</div>
@@ -529,7 +529,7 @@
             </div>
 
             <!-- ── JavaScript Integrado ──────────────────────────────── -->
-            <script type="text/javascript">
+            <script type="text/javascript"><![CDATA[
                 document.addEventListener('DOMContentLoaded', function() {
                     let currentProductId = null;
                     let currentField = null;
@@ -539,14 +539,14 @@
                     const confirmModal = new bootstrap.Modal(document.getElementById('confirmUpdateModal'));
                     const editModal = new bootstrap.Modal(document.getElementById('editFieldModal'));
 
-                    // Colección de categorías para el select (inyectada desde Odoo)
-                    const categorias = [
-                        <t t-foreach="categorias" t-as="c">
-                            { id: <t t-esc="c.id"/>, name: "<t t-esc="c.display_name.replace('&amp;quot;', '\\&amp;quot;')"/>" },
-                        </t>
+                    // Colección de categorías para el select
+]]>
+                    const categorias = [<t t-foreach="categorias" t-as="c">
+                        { id: <t t-esc="c.id"/>, name: '<t t-esc="c.display_name"/>' }<t t-if="c_last">
+                        </t><t t-else="">,
+                        </t></t>
                     ];
-
-                    // 1. Detectar click en celda editable
+            <![CDATA[
                     document.querySelectorAll('.editable-cell').forEach(cell => {
                         cell.addEventListener('click', function() {
                             currentProductId = this.getAttribute('data-id');
@@ -686,6 +686,7 @@
                         });
                     });
                 });
+            ]]>
             </script>
 
         </t>
