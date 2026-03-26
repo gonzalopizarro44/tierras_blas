@@ -4,328 +4,13 @@
 
         <t t-call="website.layout">
 
-            <style>
-                :root {
-                    --brand-primary: #166534;
-                    --brand-primary-dark: #0f4620;
-                    --brand-light: #dcfce7;
-                    --brand-secondary: #6b7280;
-                    --brand-bg: #f9fafb;
-                    --brand-card: #ffffff;
-                    --brand-border: #e5e7eb;
-                    --brand-text: #1f2937;
-                    --brand-text-muted: #6b7280;
-                    --brand-shadow: 0 1px 3px rgba(0,0,0,.08);
-                    --brand-shadow-lg: 0 4px 6px rgba(0,0,0,.1);
-                    --brand-radius: 0.75rem;
-                }
-
-                body { background: var(--brand-bg); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif; }
-
-                .panel-header {
-                    background: linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-dark) 100%);
-                    color: white;
-                    padding: 2rem;
-                    border-radius: 0 0 var(--brand-radius) var(--brand-radius);
-                    margin-bottom: 2rem;
-                    box-shadow: var(--brand-shadow-lg);
-                }
-
-                .panel-header h1 {
-                    font-size: 2rem;
-                    font-weight: 700;
-                    margin: 0;
-                    font-family: 'Inter', sans-serif;
-                }
-
-                .panel-header p {
-                    font-size: 0.95rem;
-                    opacity: 0.9;
-                    margin-top: 0.25rem;
-                }
-
-                .panel-card {
-                    background: var(--brand-card);
-                    border: 1px solid var(--brand-border);
-                    border-radius: var(--brand-radius);
-                    box-shadow: var(--brand-shadow);
-                    overflow: hidden;
-                    margin-bottom: 1.5rem;
-                    transition: box-shadow 0.3s ease;
-                }
-
-                .panel-card:hover {
-                    box-shadow: var(--brand-shadow-lg);
-                }
-
-                .panel-card-title {
-                    font-size: 1.1rem;
-                    font-weight: 600;
-                    margin: 0;
-                    padding: 1rem;
-                    background: var(--brand-bg);
-                    border-bottom: 1px solid var(--brand-border);
-                    color: var(--brand-text);
-                    font-family: 'Inter', sans-serif;
-                }
-
-                .panel-card-body {
-                    padding: 1.5rem;
-                }
-
-                /* TABS */
-                .nav-tabs {
-                    border-bottom: 2px solid var(--brand-border);
-                }
-
-                .nav-link {
-                    color: var(--brand-text-muted);
-                    border: none;
-                    border-bottom: 3px solid transparent;
-                    padding: 0.75rem 1.5rem;
-                    font-weight: 500;
-                    transition: all 0.2s;
-                    font-family: 'Inter', sans-serif;
-                }
-
-                .nav-link:hover {
-                    color: var(--brand-primary);
-                    border-bottom-color: var(--brand-border);
-                }
-
-                .nav-link.active {
-                    color: var(--brand-primary);
-                    border-bottom-color: var(--brand-primary);
-                    font-weight: 600;
-                }
-
-                /* MÉTRICAS */
-                .metric-card {
-                    background: white;
-                    border: 1px solid var(--brand-border);
-                    border-radius: var(--brand-radius);
-                    padding: 1.5rem;
-                    text-align: center;
-                    transition: all 0.3s;
-                    cursor: pointer;
-                }
-
-                .metric-card:hover {
-                    transform: translateY(-4px);
-                    box-shadow: var(--brand-shadow-lg);
-                    border-color: var(--brand-primary);
-                }
-
-                .metric-icon {
-                    font-size: 2.5rem;
-                    margin-bottom: 0.5rem;
-                }
-
-                .metric-value {
-                    font-size: 1.75rem;
-                    font-weight: 700;
-                    color: var(--brand-primary);
-                    font-family: 'Inter', sans-serif;
-                }
-
-                .metric-label {
-                    font-size: 0.8rem;
-                    color: var(--brand-text-muted);
-                    text-transform: uppercase;
-                    letter-spacing: 0.05em;
-                    margin-top: 0.5rem;
-                    font-weight: 500;
-                }
-
-                /* ALERTAS */
-                .alert-item {
-                    display: flex;
-                    align-items: flex-start;
-                    padding: 1rem;
-                    border-radius: var(--brand-radius);
-                    margin-bottom: 1rem;
-                    border-left: 4px solid transparent;
-                    font-family: 'Inter', sans-serif;
-                }
-
-                .alert-item.warning {
-                    background: #fef3c7;
-                    border-left-color: #d97706;
-                    color: #78350f;
-                }
-
-                .alert-item.danger {
-                    background: #fee2e2;
-                    border-left-color: var(--brand-primary);
-                    color: #7f1d1d;
-                }
-
-                .alert-item.info {
-                    background: #dbeafe;
-                    border-left-color: #0284c7;
-                    color: #0c2d6b;
-                }
-
-                .alert-icon {
-                    font-size: 1.5rem;
-                    margin-right: 1rem;
-                    flex-shrink: 0;
-                }
-
-                .alert-content h6 {
-                    margin: 0 0 0.25rem 0;
-                    font-weight: 600;
-                    color: var(--brand-text);
-                }
-
-                .alert-content p {
-                    margin: 0;
-                    font-size: 0.9rem;
-                }
-
-                /* INDICADORES */
-                .indicator-row {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                    gap: 1.5rem;
-                    margin-bottom: 2rem;
-                }
-
-                .indicator-box {
-                    background: white;
-                    border: 1px solid var(--brand-border);
-                    border-radius: var(--brand-radius);
-                    padding: 1.5rem;
-                    transition: all 0.3s;
-                }
-
-                .indicator-box:hover {
-                    border-color: var(--brand-primary);
-                    box-shadow: var(--brand-shadow-lg);
-                }
-
-                .indicator-label {
-                    font-size: 0.8rem;
-                    color: var(--brand-text-muted);
-                    text-transform: uppercase;
-                    font-weight: 600;
-                    margin-bottom: 0.5rem;
-                    letter-spacing: 0.03em;
-                    font-family: 'Inter', sans-serif;
-                }
-
-                .indicator-value {
-                    font-size: 1.5rem;
-                    font-weight: 700;
-                    color: var(--brand-primary);
-                    font-family: 'Inter', sans-serif;
-                }
-
-                /* TABLA TOP 5 */
-                .table-top {
-                    margin-bottom: 0;
-                    font-family: 'Inter', sans-serif;
-                }
-
-                .table-top thead th {
-                    background: var(--brand-bg);
-                    border-top: 1px solid var(--brand-border);
-                    font-weight: 600;
-                    text-transform: uppercase;
-                    font-size: 0.8rem;
-                    letter-spacing: 0.03em;
-                    color: var(--brand-text-muted);
-                    padding: 1rem 0.75rem;
-                    border-bottom: 2px solid var(--brand-border);
-                }
-
-                .table-top tbody td {
-                    color: var(--brand-text);
-                    padding: 0.75rem;
-                    border-bottom: 1px solid var(--brand-border);
-                    font-size: 0.9rem;
-                }
-
-                .table-top tbody tr:hover {
-                    background: var(--brand-bg);
-                }
-
-                /* GRÁFICOS */
-                .chart-container {
-                    position: relative;
-                    height: 300px;
-                    margin-bottom: 2rem;
-                }
-
-                /* FILTROS */
-                .filter-section {
-                    background: white;
-                    border: 1px solid var(--brand-border);
-                    border-radius: var(--brand-radius);
-                    padding: 1.5rem;
-                    margin-bottom: 2rem;
-                    font-family: 'Inter', sans-serif;
-                }
-
-                .filter-label {
-                    font-size: 0.8rem;
-                    font-weight: 600;
-                    color: var(--brand-text-muted);
-                    text-transform: uppercase;
-                    letter-spacing: 0.03em;
-                    margin-bottom: 0.5rem;
-                }
-
-                .form-control, .form-select {
-                    border-color: var(--brand-border);
-                    border-radius: var(--brand-radius);
-                    box-shadow: none;
-                    color: var(--brand-text);
-                    font-family: 'Inter', sans-serif;
-                    font-size: 0.9rem;
-                }
-
-                .form-control:focus, .form-select:focus {
-                    border-color: var(--brand-primary);
-                    box-shadow: 0 0 0 0.2rem rgba(22,101,52,.15);
-                }
-
-                .btn-primary {
-                    background: var(--brand-primary);
-                    border-color: var(--brand-primary);
-                    color: white;
-                    font-family: 'Inter', sans-serif;
-                    font-weight: 600;
-                    transition: all 0.2s;
-                }
-
-                .btn-primary:hover {
-                    background: var(--brand-primary-dark);
-                    border-color: var(--brand-primary-dark);
-                    color: white;
-                    transform: translateY(-1px);
-                }
-
-                .btn-outline-secondary {
-                    border-color: var(--brand-border);
-                    color: var(--brand-text-muted);
-                    font-family: 'Inter', sans-serif;
-                    font-weight: 600;
-                    transition: all 0.2s;
-                }
-
-                .btn-outline-secondary:hover {
-                    border-color: var(--brand-primary);
-                    color: var(--brand-primary);
-                    background-color: transparent;
-                }
-            </style>
+            <!-- Los estilos han sido movidos a panel_web/static/src/css/panel.css -->
 
             <div class="container-liquid pt-4">
 
                 <!-- HEADER -->
                 <div class="panel-header">
-                    <h1>📊 Panel Administrativo</h1>
+                    <h1>Panel Administrativo</h1>
                     <p>Dashboard ejecutivo del negocio en tiempo real</p>
                 </div>
 
@@ -398,7 +83,7 @@
 
                                 <!-- Total Ventas -->
                                 <div class="col-md-6 col-lg-3">
-                                    <div class="metric-card">
+                                    <div class="metric-card" data-metric="total-ventas">
                                         <div class="metric-icon">📦</div>
                                         <div class="metric-value">
                                             <t t-esc="metricas['total_ventas']"/>
@@ -409,7 +94,7 @@
 
                                 <!-- Ingresos -->
                                 <div class="col-md-6 col-lg-3">
-                                    <div class="metric-card">
+                                    <div class="metric-card" data-metric="ingresos">
                                         <div class="metric-icon">💵</div>
                                         <div class="metric-value">
                                             $<t t-esc="'%.0f' % metricas['ingresos']"/>
@@ -420,7 +105,7 @@
 
                                 <!-- Total Compras -->
                                 <div class="col-md-6 col-lg-3">
-                                    <div class="metric-card">
+                                    <div class="metric-card" data-metric="total-compras">
                                         <div class="metric-icon">🛒</div>
                                         <div class="metric-value">
                                             <t t-esc="metricas['total_compras']"/>
@@ -431,7 +116,7 @@
 
                                 <!-- Gastos -->
                                 <div class="col-md-6 col-lg-3">
-                                    <div class="metric-card">
+                                    <div class="metric-card" data-metric="gastos">
                                         <div class="metric-icon">💸</div>
                                         <div class="metric-value">
                                             $<t t-esc="'%.0f' % metricas['gastos']"/>
@@ -446,7 +131,7 @@
 
                                 <!-- Ganancia Neta -->
                                 <div class="col-md-6 col-lg-3">
-                                    <div class="metric-card" t-att-style="'background: ' + ('#d1f2eb' if metricas['ganancia_neta'] > 0 else '#f8d7da')">
+                                    <div class="metric-card" data-metric="ganancia-neta">
                                         <div class="metric-icon">
                                             <t t-if="metricas['ganancia_neta'] > 0">✅</t>
                                             <t t-else="">⚠️</t>
@@ -460,7 +145,7 @@
 
                                 <!-- Productos Activos -->
                                 <div class="col-md-6 col-lg-3">
-                                    <div class="metric-card">
+                                    <div class="metric-card" data-metric="productos-activos">
                                         <div class="metric-icon">📋</div>
                                         <div class="metric-value">
                                             <t t-esc="metricas['productos_activos']"/>
@@ -471,7 +156,7 @@
 
                                 <!-- Sin Stock -->
                                 <div class="col-md-6 col-lg-3">
-                                    <div class="metric-card" t-att-style="'background: ' + ('#f8d7da' if metricas['productos_sin_stock'] > 0 else '#d1f2eb')">
+                                    <div class="metric-card" data-metric="sin-stock" t-att-style="'background: ' + ('#f8d7da' if metricas['productos_sin_stock'] > 0 else '#d1f2eb')">
                                         <div class="metric-icon">❌</div>
                                         <div class="metric-value" t-att-style="'color: ' + ('#dc3545' if metricas['productos_sin_stock'] > 0 else '#198754')">
                                             <t t-esc="metricas['productos_sin_stock']"/>
@@ -482,7 +167,7 @@
 
                                 <!-- Bajo Stock -->
                                 <div class="col-md-6 col-lg-3">
-                                    <div class="metric-card" t-att-style="'background: ' + ('#fff8dc' if metricas['productos_bajo_stock'] > 0 else '#d1f2eb')">
+                                    <div class="metric-card" data-metric="bajo-stock" t-att-style="'background: ' + ('#fff8dc' if metricas['productos_bajo_stock'] > 0 else '#d1f2eb')">
                                         <div class="metric-icon">⚠️</div>
                                         <div class="metric-value" t-att-style="'color: ' + ('#ffc107' if metricas['productos_bajo_stock'] > 0 else '#198754')">
                                             <t t-esc="metricas['productos_bajo_stock']"/>
@@ -657,65 +342,30 @@
 
             </div>
 
+            <!-- MODAL GENÉRICO DE DETALLES -->
+            <div class="modal fade" id="modalDetalles" tabindex="-1">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="modalTitle">Detalles</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body" id="modalBody">
+                            <div class="modal-loading">
+                                <div class="spinner-border"></div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- SCRIPTS -->
-            <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-            <script type="text/javascript">
-                const graficos_data = <t t-out="graficos_json"/>;
-
-                // Gráfico 1: Ventas por Categoría (Barras)
-                const ctx1 = document.getElementById('chartCategorias').getContext('2d');
-                new Chart(ctx1, {
-                    type: 'bar',
-                    data: {
-                        labels: graficos_data.ventas_por_categoria.labels,
-                        datasets: [{
-                            label: 'Monto ($)',
-                            data: graficos_data.ventas_por_categoria.data,
-                            backgroundColor: '#166534',
-                            borderColor: '#0f4620',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            y: { beginAtZero: true }
-                        }
-                    }
-                });
-
-                // Gráfico 2: Evolución de Ventas (Líneas)
-                const ctx2 = document.getElementById('chartEvolucion').getContext('2d');
-                new Chart(ctx2, {
-                    type: 'line',
-                    data: {
-                        labels: graficos_data.evolucion_ventas.labels,
-                        datasets: [{
-                            label: 'Ventas ($)',
-                            data: graficos_data.evolucion_ventas.data,
-                            borderColor: '#166534',
-                            backgroundColor: 'rgba(22,101,52,0.1)',
-                            borderWidth: 2,
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: true, position: 'top' }
-                        },
-                        scales: {
-                            y: { beginAtZero: true }
-                        }
-                    }
-                });
-            </script>
+            <!-- Los scripts han sido movidos a panel_web/static/src/js/panel.js -->
+            <!-- Datos para los gráficos -->
+            <script id="graficos_data_json" type="application/json" t-out="graficos_json"/>
 
         </t>
 

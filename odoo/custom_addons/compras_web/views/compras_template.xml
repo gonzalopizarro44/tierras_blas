@@ -191,7 +191,7 @@
                     <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
                         <div>
                             <h1 class="compras-title">Panel de Compras</h1>
-                            <p class="compras-subtitle">GestiÃ³n integral de Ã³rdenes de compra</p>
+                            <p class="compras-subtitle">Gestión integral de órdenes de compra</p>
                         </div>
                         <div class="d-flex gap-2 align-items-center">
                             <div class="compras-stat">
@@ -199,7 +199,7 @@
                                 <t t-esc="total_compras"/>
                             </div>
                             <a href="/compras/nueva" class="btn compras-btn-primary">
-                                âž• Registrar Nueva Compra
+                                ➕ Registrar Nueva Compra
                             </a>
                         </div>
                     </div>
@@ -224,9 +224,9 @@
                                        t-att-value="filtros.get('producto', '')"/>
                             </div>
 
-                            <!-- CategorÃ­a -->
+                            <!-- Categoría -->
                             <div class="col-12 col-md-6 col-lg-2">
-                                <label class="compras-filter-label">CategorÃ­a</label>
+                                <label class="compras-filter-label">Categoría</label>
                                 <select name="categoria" class="form-select form-select-sm">
                                     <option value="">Todas</option>
                                     <t t-foreach="categorias" t-as="cat">
@@ -251,8 +251,8 @@
 
                             <!-- Botones -->
                             <div class="col-12 col-lg-auto d-flex gap-2">
-                                <button type="submit" class="btn btn-sm btn-primary">ðŸ” Filtrar</button>
-                                <a href="/compras" class="btn btn-sm btn-outline-secondary">âœ• Limpiar</a>
+                                <button type="submit" class="btn btn-sm btn-primary">🔍 Filtrar</button>
+                                <a href="/compras" class="btn btn-sm btn-outline-secondary">✕ Limpiar</a>
                             </div>
 
                         </form>
@@ -279,7 +279,7 @@
                                     <tbody>
                                         <t t-foreach="compras" t-as="compra">
                                             <tr>
-                                                <!-- NÃºmero de orden -->
+                                                <!-- Número de orden -->
                                                 <td style="font-weight: 600;">
                                                     <t t-esc="compra.name"/>
                                                 </td>
@@ -310,13 +310,13 @@
                                                 <!-- Estado (badge) -->
                                                 <td>
                                                     <t t-if="compra.state == 'draft'">
-                                                        <span class="compras-badge badge-draft">ðŸ“‹ Pedido</span>
+                                                        <span class="compras-badge badge-draft">📋 Pedido</span>
                                                     </t>
                                                     <t t-elif="compra.state == 'purchase'">
-                                                        <span class="compras-badge badge-purchase">âœ“ Confirmado</span>
+                                                        <span class="compras-badge badge-purchase">✓ Confirmado</span>
                                                     </t>
                                                     <t t-elif="compra.state == 'cancel'">
-                                                        <span class="compras-badge badge-cancel">âœ• Cancelado</span>
+                                                        <span class="compras-badge badge-cancel">✕ Cancelado</span>
                                                     </t>
                                                     <t t-else="">
                                                         <span class="compras-badge badge-draft"><t t-esc="compra.state"/></span>
@@ -333,11 +333,11 @@
                                                     <t t-if="compra.state == 'draft'">
                                                         <button type="button" class="btn compras-btn-sm compras-btn-success"
                                                                 onclick="confirmarCompra(this)" t-att-data-order-id="compra.id">
-                                                            âœ“ Confirmar
+                                                            ✓ Confirmar
                                                         </button>
                                                         <button type="button" class="btn compras-btn-sm compras-btn-danger"
                                                                 onclick="cancelarCompra(this)" t-att-data-order-id="compra.id">
-                                                            âœ• Cancelar
+                                                            ✕ Cancelar
                                                         </button>
                                                     </t>
                                                 </td>
@@ -348,12 +348,12 @@
                             </div>
                         </t>
 
-                        <!-- Estado vacÃ­o -->
+                        <!-- Estado vacío -->
                         <t t-else="">
                             <div class="compras-empty">
-                                <i>ðŸ“­</i>
+                                <i>🔭</i>
                                 <h5>No se encontraron compras</h5>
-                                <p class="mb-0">Intenta ajustar los filtros o <a href="/compras">limpiar la bÃºsqueda</a>.</p>
+                                <p class="mb-0">Intenta ajustar los filtros o <a href="/compras">limpiar la búsqueda</a>.</p>
                             </div>
                         </t>
 
@@ -368,10 +368,10 @@
                     const ordenId = btn.getAttribute('data-order-id');
                     const txtBtn = btn.innerText;
 
-                    if (!confirm('Â¿Confirmar esta compra? El stock se incrementarÃ¡.')) return;
+                    if (!confirm('¿Confirmar esta compra? El stock se incrementará.')) return;
 
                     btn.disabled = true;
-                    btn.innerHTML = 'â³ Procesando...';
+                    btn.innerHTML = '⏳ Procesando...';
 
                     fetch('/compras/confirmar', {
                         method: 'POST',
@@ -395,7 +395,7 @@
                     })
                     .catch(err => {
                         console.error(err);
-                        alert('Error de conexiÃ³n');
+                        alert('Error de conexión');
                         btn.disabled = false;
                         btn.innerText = txtBtn;
                     });
@@ -405,10 +405,10 @@
                     const ordenId = btn.getAttribute('data-order-id');
                     const txtBtn = btn.innerText;
 
-                    if (!confirm('Â¿Cancelar esta compra? El stock NO serÃ¡ modificado.')) return;
+                    if (!confirm('¿Cancelar esta compra? El stock NO será modificado.')) return;
 
                     btn.disabled = true;
-                    btn.innerHTML = 'â³ Procesando...';
+                    btn.innerHTML = '⏳ Procesando...';
 
                     fetch('/compras/cancelar', {
                         method: 'POST',
@@ -432,7 +432,7 @@
                     })
                     .catch(err => {
                         console.error(err);
-                        alert('Error de conexiÃ³n');
+                        alert('Error de conexión');
                         btn.disabled = false;
                         btn.innerText = txtBtn;
                     });

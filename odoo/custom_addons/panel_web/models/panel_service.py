@@ -504,3 +504,213 @@ class PanelService(models.AbstractModel):
             'labels': fechas_ordenadas,
             'data': [ventas_por_fecha[f] for f in fechas_ordenadas],
         }
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # SECCIÓN 6: DETALLES DE MÉTRICAS (para popups)
+    # ═════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def obtener_productos_sin_stock(self, page=1, limit=10):
+        """
+        Obtiene lista paginada de productos sin stock (cantidad = 0).
+        
+        Args:
+            page (int): Número de página (1-indexado)
+            limit (int): Cantidad de registros por página
+        
+        Returns:
+            dict: {total: int, items: list, page: int, limit: int}
+        """
+        Quant = self.env['stock.quant'].sudo()
+        
+        # Buscar productos sin stock
+        sin_stock = Quant.search([('quantity', '=', 0)])
+        total = len(sin_stock)
+        
+        # Calcular offset para pagination
+        offset = (page - 1) * limit
+        items_paginados = sin_stock[offset:offset + limit]
+        
+        # Construir respuesta
+        items = []
+        for quant in items_paginados:
+            prod = quant.product_id
+            items.append({
+                'id': prod.id,
+                'nombre': prod.name,
+                'stock': quant.quantity,
+                'sku': prod.default_code or 'N/A',
+            })
+        
+        return {
+            'total': total,
+            'items': items,
+            'page': page,
+            'limit': limit,
+            'total_pages': (total + limit - 1) // limit,
+        }
+
+    @api.model
+    def obtener_productos_bajo_stock(self, page=1, limit=10):
+        """
+        Obtiene lista paginada de productos con stock bajo (0 < cantidad < 10).
+        
+        Args:
+            page (int): Número de página (1-indexado)
+            limit (int): Cantidad de registros por página
+        
+        Returns:
+            dict: {total: int, items: list, page: int, limit: int}
+        """
+        Quant = self.env['stock.quant'].sudo()
+        
+        # Buscar productos con stock bajo
+        bajo_stock = Quant.search(
+            [('quantity', '>', 0), ('quantity', '<', 10)],
+            order='quantity ASC'
+        )
+        total = len(bajo_stock)
+        
+        # Calcular offset para pagination
+        offset = (page - 1) * limit
+        items_paginados = bajo_stock[offset:offset + limit]
+        
+        # Construir respuesta
+        items = []
+        for quant in items_paginados:
+            prod = quant.product_id
+            items.append({
+                'id': prod.id,
+                'nombre': prod.name,
+                'stock': quant.quantity,
+                'sku': prod.default_code or 'N/A',
+            })
+        
+        return {
+            'total': total,
+            'items': items,
+            'page': page,
+            'limit': limit,
+            'total_pages': (total + limit - 1) // limit,
+        }
+
+    @api.model
+    def obtener_detalles_ventas(self, fecha_desde, fecha_hasta, page=1, limit=10):
+        """
+        Obtiene lista paginada de ventas confirmadas en el período.
+        
+        Args:
+            fecha_desde (str): Fecha inicio en formato ISO
+            fecha_hasta (str): Fecha fin en formato ISO
+            page (int): Número de página (1-indexado)
+            limit (int): Cantidad de registros por página
+        
+        Returns:
+            dict: {total: int, items: list, page: int, limit: int}
+        """
+        SaleOrder = self.env['sale.order'].sudo()
+        
+        domain = self._construir_domain_ventas(fecha_desde, fecha_hasta)
+        ventas = SaleOrder.search(domain, order='date_order DESC')
+        total = len(ventas)
+        
+        # Calcular offset para pagination
+        offset = (page - 1) * limit
+        items_paginados = ventas[offset:offset + limit]
+        
+        # Construir respuesta
+        items = []
+        for venta in items_paginados:
+            items.append({
+                'id': venta.id,
+                'numero': venta.name,
+                'cliente': venta.partner_id.name,
+                'monto': round(venta.amount_total, 2),
+                'fecha': venta.date_order.strftime('%d/%m/%Y'),
+                'estado': venta.state,
+            })
+        
+        return {
+            'total': total,
+            'items': items,
+            'page': page,
+            'limit': limit,
+            'total_pages': (total + limit - 1) // limit,
+        }
+
+    @api.model
+    def obtener_detalles_compras(self, fecha_desde, fecha_hasta, page=1, limit=10):
+        """
+        Obtiene lista paginada de compras confirmadas en el período.
+        
+        Args:
+            fecha_desde (str): Fecha inicio en formato ISO
+            fecha_hasta (str): Fecha fin en formato ISO
+            page (int): Número de página (1-indexado)
+            limit (int): Cantidad de registros por página
+        
+        Returns:
+            dict: {total: int, items: list, page: int, limit: int}
+        """
+        PurchaseOrder = self.env['purchase.order'].sudo()
+        
+        domain = self._construir_domain_compras(fecha_desde, fecha_hasta)
+        compras = PurchaseOrder.search(domain, order='date_order DESC')
+        total = len(compras)
+        
+        # Calcular offset para pagination
+        offset = (page - 1) * limit
+        items_paginados = compras[offset:offset + limit]
+        
+        # Construir respuesta
+        items = []
+        for compra in items_paginados:
+            items.append({
+                'id': compra.id,
+                'numero': compra.name,
+                'proveedor': compra.partner_id.name,
+                'monto': round(compra.amount_total, 2),
+                'fecha': compra.date_order.strftime('%d/%m/%Y'),
+                'estado': compra.state,
+            })
+        
+        return {
+            'total': total,
+            'items': items,
+            'page': page,
+            'limit': limit,
+            'total_pages': (total + limit - 1) // limit,
+        }
+
+    @api.model
+    def obtener_productos_activos(self, page=1, limit=10):
+        """
+        Obtiene lista paginada de productos activos.
+        """
+        Product = self.env['product.product'].sudo()
+        productos = Product.search([('active', '=', True)], order='name ASC')
+        total = len(productos)
+        
+        offset = (page - 1) * limit
+        items_paginados = productos[offset:offset + limit]
+        
+        items = []
+        for prod in items_paginados:
+            # Obtener stock
+            stock = prod.qty_available
+            items.append({
+                'id': prod.id,
+                'nombre': prod.name,
+                'categoria': prod.categ_id.name or 'N/A',
+                'precio': prod.list_price,
+                'stock': stock,
+            })
+        
+        return {
+            'total': total,
+            'items': items,
+            'page': page,
+            'limit': limit,
+            'total_pages': (total + limit - 1) // limit,
+        }
+

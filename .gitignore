@@ -59,3 +59,7 @@ odoo.pid
 # no subir backups ni archivos temporales
 # =========================
 *.bak
+
+# =========================
+# ignora subir la carpeta docs
+docs/

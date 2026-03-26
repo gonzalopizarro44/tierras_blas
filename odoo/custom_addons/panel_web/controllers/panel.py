@@ -99,3 +99,143 @@ class PanelController(http.Controller):
             'panel_web.panel_template',
             contexto
         )
+
+    @http.route('/panel/api/productos-sin-stock', type='http', auth='user', website=True)
+    def api_productos_sin_stock(self, **kwargs):
+        """
+        API: Obtiene lista paginada de productos sin stock.
+        
+        Parámetros GET/POST:
+        - page (int, default=1): Número de página
+        - limit (int, default=10): Registros por página
+        
+        Returns:
+            json: {total, items, page, limit, total_pages}
+        """
+        # Validación de seguridad
+        if not request.env.user.has_group('permisos_usuarios.group_administrador'):
+            return {'error': 'Acceso denegado'}
+        
+        panel_service = request.env['panel.service']
+        page = int(kwargs.get('page', 1))
+        limit = int(kwargs.get('limit', 10))
+        
+        result = panel_service.obtener_productos_sin_stock(page=page, limit=limit)
+        return request.make_response(
+            json.dumps(result),
+            headers=[('Content-Type', 'application/json')]
+        )
+
+    @http.route('/panel/api/productos-bajo-stock', type='http', auth='user', website=True)
+    def api_productos_bajo_stock(self, **kwargs):
+        """
+        API: Obtiene lista paginada de productos con stock bajo.
+        
+        Parámetros GET/POST:
+        - page (int, default=1): Número de página
+        - limit (int, default=10): Registros por página
+        
+        Returns:
+            json: {total, items, page, limit, total_pages}
+        """
+        # Validación de seguridad
+        if not request.env.user.has_group('permisos_usuarios.group_administrador'):
+            return {'error': 'Acceso denegado'}
+        
+        panel_service = request.env['panel.service']
+        page = int(kwargs.get('page', 1))
+        limit = int(kwargs.get('limit', 10))
+        
+        result = panel_service.obtener_productos_bajo_stock(page=page, limit=limit)
+        return request.make_response(
+            json.dumps(result),
+            headers=[('Content-Type', 'application/json')]
+        )
+
+    @http.route('/panel/api/detalles-ventas', type='http', auth='user', website=True)
+    def api_detalles_ventas(self, **kwargs):
+        """
+        API: Obtiene lista paginada de ventas confirmadas.
+        
+        Parámetros GET/POST:
+        - fecha_desde (str): Fecha inicio en formato ISO
+        - fecha_hasta (str): Fecha fin en formato ISO
+        - page (int, default=1): Número de página
+        - limit (int, default=10): Registros por página
+        
+        Returns:
+            json: {total, items, page, limit, total_pages}
+        """
+        # Validación de seguridad
+        if not request.env.user.has_group('permisos_usuarios.group_administrador'):
+            return {'error': 'Acceso denegado'}
+        
+        panel_service = request.env['panel.service']
+        
+        # Obtener fechas (usa defaults si no se proporciona)
+        fecha_desde, fecha_hasta = panel_service.obtener_fecha_por_defecto()
+        fecha_desde = kwargs.get('fecha_desde', fecha_desde)
+        fecha_hasta = kwargs.get('fecha_hasta', fecha_hasta)
+        page = int(kwargs.get('page', 1))
+        limit = int(kwargs.get('limit', 10))
+        
+        result = panel_service.obtener_detalles_ventas(
+            fecha_desde, fecha_hasta, page=page, limit=limit
+        )
+        return request.make_response(
+            json.dumps(result),
+            headers=[('Content-Type', 'application/json')]
+        )
+
+    @http.route('/panel/api/detalles-compras', type='http', auth='user', website=True)
+    def api_detalles_compras(self, **kwargs):
+        """
+        API: Obtiene lista paginada de compras confirmadas.
+        
+        Parámetros GET/POST:
+        - fecha_desde (str): Fecha inicio en formato ISO
+        - fecha_hasta (str): Fecha fin en formato ISO
+        - page (int, default=1): Número de página
+        - limit (int, default=10): Registros por página
+        
+        Returns:
+            json: {total, items, page, limit, total_pages}
+        """
+        # Validación de seguridad
+        if not request.env.user.has_group('permisos_usuarios.group_administrador'):
+            return {'error': 'Acceso denegado'}
+        
+        panel_service = request.env['panel.service']
+        
+        # Obtener fechas (usa defaults si no se proporciona)
+        fecha_desde, fecha_hasta = panel_service.obtener_fecha_por_defecto()
+        fecha_desde = kwargs.get('fecha_desde', fecha_desde)
+        fecha_hasta = kwargs.get('fecha_hasta', fecha_hasta)
+        page = int(kwargs.get('page', 1))
+        limit = int(kwargs.get('limit', 10))
+        
+        result = panel_service.obtener_detalles_compras(
+            fecha_desde, fecha_hasta, page=page, limit=limit
+        )
+        return request.make_response(
+            json.dumps(result),
+            headers=[('Content-Type', 'application/json')]
+        )
+
+    @http.route('/panel/api/productos-activos', type='http', auth='user', website=True)
+    def api_productos_activos(self, **kwargs):
+        """
+        API: Obtiene lista paginada de productos activos.
+        """
+        if not request.env.user.has_group('permisos_usuarios.group_administrador'):
+            return {'error': 'Acceso denegado'}
+        
+        panel_service = request.env['panel.service']
+        page = int(kwargs.get('page', 1))
+        limit = int(kwargs.get('limit', 10))
+        
+        result = panel_service.obtener_productos_activos(page=page, limit=limit)
+        return request.make_response(
+            json.dumps(result),
+            headers=[('Content-Type', 'application/json')]
+        )
