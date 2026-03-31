@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="nueva_factura_template" name="Crear Nueva Factura">
+
+        <t t-call="website.layout">
+
+            <!-- ESTILOS -->
+            <style>
+                :root {
+                    --brand-primary: #166534;
+                    --brand-primary-dark: #0f4620;
+                    --brand-light: #dcfce7;
+                    --brand-secondary: #6b7280;
+                    --brand-bg: #f9fafb;
+                    --brand-border: #e5e7eb;
+                    --brand-text: #1f2937;
+                    --brand-text-muted: #6b7280;
+                    --brand-shadow: 0 1px 3px rgba(0,0,0,.08);
+                    --brand-radius: 0.75rem;
+                }
+
+                .nf-page { 
+                    background: var(--brand-bg); 
+                    min-height: 100vh; 
+                    padding: 2rem 0; 
+                    font-family: 'Inter', sans-serif; 
+                }
+
+                .nf-card {
+                    background: white;
+                    border: 1px solid var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    padding: 2rem;
+                    box-shadow: var(--brand-shadow);
+                    margin-bottom: 2rem;
+                    transition: box-shadow 0.3s ease;
+                }
+
+                .nf-card:hover {
+                    box-shadow: 0 4px 6px rgba(0,0,0,.1);
+                }
+
+                .nf-title { 
+                    font-size: 1.5rem; 
+                    font-weight: 700; 
+                    margin: 0;
+                    color: var(--brand-text);
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .nf-section-title {
+                    font-size: 1rem;
+                    font-weight: 600;
+                    color: var(--brand-primary);
+                    border-bottom: 2px solid var(--brand-border);
+                    padding-bottom: 0.75rem;
+                    margin-bottom: 1rem;
+                }
+
+                .nf-label {
+                    font-weight: 600;
+                    font-size: 0.9rem;
+                    margin-bottom: 0.5rem;
+                    color: var(--brand-text);
+                }
+
+                .nf-warning-box {
+                    background: #fef3c7;
+                    border-left: 4px solid #d97706;
+                    padding: 1rem;
+                    border-radius: 0 var(--brand-radius) var(--brand-radius) 0;
+                    margin-bottom: 1.5rem;
+                    color: #78350f;
+                    font-size: 0.95rem;
+                }
+
+                .nf-orden-selector {
+                    background: var(--brand-bg);
+                    border: 1px solid var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    padding: 1rem;
+                    margin-bottom: 1rem;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+
+                .nf-orden-selector:hover {
+                    border-color: var(--brand-primary);
+                    background: linear-gradient(135deg, rgba(22,101,52,0.05) 0%, transparent 100%);
+                }
+
+                .nf-orden-selector.selected {
+                    border-color: var(--brand-primary);
+                    background: var(--brand-light);
+                }
+
+                .nf-orden-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 0.5rem;
+                }
+
+                .nf-orden-nombre {
+                    font-weight: 600;
+                    color: var(--brand-primary);
+                    font-size: 1rem;
+                }
+
+                .nf-orden-info {
+                    font-size: 0.85rem;
+                    color: var(--brand-text-muted);
+                }
+
+                .nf-orden-monto {
+                    font-size: 1.1rem;
+                    font-weight: 700;
+                    color: var(--brand-primary);
+                }
+
+                .nf-btn {
+                    display: inline-block;
+                    padding: 0.5rem 1rem;
+                    border: none;
+                    border-radius: var(--brand-radius);
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    text-align: center;
+                    text-decoration: none;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .nf-btn-primary {
+                    background: var(--brand-primary);
+                    color: white;
+                }
+
+                .nf-btn-primary:hover {
+                    background: var(--brand-primary-dark);
+                    color: white;
+                    transform: translateY(-1px);
+                }
+
+                .nf-btn-secondary {
+                    background: #6b7280;
+                    color: white;
+                }
+
+                .nf-btn-secondary:hover {
+                    background: #4b5563;
+                    color: white;
+                    transform: translateY(-1px);
+                }
+
+                .nf-btn-block {
+                    width: 100%;
+                }
+
+                .nf-resumen {
+                    background: var(--brand-light);
+                    border-left: 4px solid var(--brand-primary);
+                    padding: 1rem;
+                    border-radius: 0 var(--brand-radius) var(--brand-radius) 0;
+                    margin-bottom: 1rem;
+                }
+
+                .nf-resumen-item {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 0.5rem;
+                    font-size: 0.95rem;
+                    color: var(--brand-text);
+                }
+
+                .nf-resumen-item:last-child {
+                    margin-bottom: 0;
+                    border-top: 1px solid rgba(22,101,52,.3);
+                    padding-top: 0.5rem;
+                    font-size: 1.1rem;
+                    font-weight: 700;
+                    color: var(--brand-primary);
+                }
+
+                .form-control, .form-select {
+                    border-color: var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    font-family: 'Inter', sans-serif;
+                    color: var(--brand-text);
+                    font-size: 0.9rem;
+                }
+
+                .form-control:focus, .form-select:focus {
+                    border-color: var(--brand-primary);
+                    box-shadow: 0 0 0 0.2rem rgba(22,101,52,.15);
+                }
+
+                .nf-empty-message {
+                    text-align: center;
+                    padding: 2rem;
+                    background: var(--brand-bg);
+                    border-radius: var(--brand-radius);
+                    color: var(--brand-text-muted);
+                }
+
+                .nf-tab-buttons {
+                    display: flex;
+                    gap: 1rem;
+                    margin-bottom: 1.5rem;
+                    border-bottom: 2px solid var(--brand-border);
+                }
+
+                .nf-tab-btn {
+                    padding: 1rem;
+                    border: none;
+                    background: none;
+                    color: var(--brand-text-muted);
+                    font-weight: 600;
+                    cursor: pointer;
+                    border-bottom: 3px solid transparent;
+                    transition: all 0.2s;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .nf-tab-btn:hover {
+                    color: var(--brand-text);
+                }
+
+                .nf-tab-btn.active {
+                    color: var(--brand-primary);
+                    border-bottom-color: var(--brand-primary);
+                }
+
+                .nf-tab-content {
+                    display: none;
+                }
+
+                .nf-tab-content.active {
+                    display: block;
+                }
+            </style>
+
+            <div class="nf-page">
+                <div class="container">
+
+                    <!-- HEADER -->
+                    <div class="mb-4">
+                        <a href="/facturacion" class="text-muted" style="text-decoration: none;">← Volver al Panel</a>
+                        <h1 class="nf-title mt-2">Crear Nueva Factura</h1>
+                    </div>
+
+                    <!-- ADVERTENCIA -->
+                    <div class="nf-warning-box">
+                        <strong>⚠️ IMPORTANTE:</strong> Selecciona una orden de venta o compra para generar su factura.
+                    </div>
+
+                    <!-- TAB BUTTONS -->
+                    <div class="nf-card">
+                        <div class="nf-tab-buttons">
+                            <button type="button" class="nf-tab-btn active" onclick="cambiarTab('ventas')">
+                                📈 Órdenes de Venta
+                            </button>
+                            <button type="button" class="nf-tab-btn" onclick="cambiarTab('compras')">
+                                📉 Órdenes de Compra
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TAB: ÓRDENES DE VENTA -->
+                    <div id="tab-ventas" class="nf-tab-content active">
+                        <div class="nf-card">
+                            <h3 class="nf-section-title">📈 Órdenes de Venta Pendientes</h3>
+
+                            <t t-if="ordenes_venta">
+                                <div id="ordenesVentaContainer">
+                                    <t t-foreach="ordenes_venta" t-as="orden">
+                                        <div class="nf-orden-selector" onclick="seleccionarOrden(this, 'venta', {@orden.id})">
+                                            <div class="nf-orden-header">
+                                                <div class="nf-orden-nombre"><t t-esc="orden.name"/></div>
+                                                <div class="nf-orden-monto">$ <t t-esc="'%.2f' % orden.amount_total"/></div>
+                                            </div>
+                                            <div class="nf-orden-info">
+                                                <strong>Cliente:</strong> <t t-esc="orden.partner_id.name"/> | 
+                                                <strong>Fecha:</strong> <t t-esc="orden.date_order.strftime('%d/%m/%Y')"/>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+                            </t>
+                            <t t-else="">
+                                <div class="nf-empty-message">
+                                    <p>✓ No hay órdenes de venta pendientes de facturación</p>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+
+                    <!-- TAB: ÓRDENES DE COMPRA -->
+                    <div id="tab-compras" class="nf-tab-content">
+                        <div class="nf-card">
+                            <h3 class="nf-section-title">📉 Órdenes de Compra Pendientes</h3>
+
+                            <t t-if="ordenes_compra">
+                                <div id="ordenesCompraContainer">
+                                    <t t-foreach="ordenes_compra" t-as="orden">
+                                        <div class="nf-orden-selector" onclick="seleccionarOrden(this, 'compra', {@orden.id})">
+                                            <div class="nf-orden-header">
+                                                <div class="nf-orden-nombre"><t t-esc="orden.name"/></div>
+                                                <div class="nf-orden-monto">$ <t t-esc="'%.2f' % orden.amount_total"/></div>
+                                            </div>
+                                            <div class="nf-orden-info">
+                                                <strong>Proveedor:</strong> <t t-esc="orden.partner_id.name"/> | 
+                                                <strong>Fecha:</strong> <t t-esc="orden.date_order.strftime('%d/%m/%Y')"/>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+                            </t>
+                            <t t-else="">
+                                <div class="nf-empty-message">
+                                    <p>✓ No hay órdenes de compra pendientes de facturación</p>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN DE CONFIRMACIÓN -->
+                    <div class="nf-card" id="seccionConfirmacion" style="display: none;">
+                        <h3 class="nf-section-title">Resumen de Factura</h3>
+
+                        <div class="nf-resumen">
+                            <div class="nf-resumen-item">
+                                <span>Orden:</span>
+                                <strong id="resumenOrden">-</strong>
+                            </div>
+                            <div class="nf-resumen-item">
+                                <span>Socio:</span>
+                                <strong id="resumenSocio">-</strong>
+                            </div>
+                            <div class="nf-resumen-item">
+                                <span>Total a Facturar:</span>
+                                <strong id="resumenMonto">$0.00</strong>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn nf-btn nf-btn-primary nf-btn-block" 
+                                    onclick="crearFactura()" 
+                                    style="padding: 0.75rem; flex: 1;">
+                                ✓ Crear Factura
+                            </button>
+                            <a href="/facturacion" class="btn nf-btn nf-btn-secondary" style="padding: 0.75rem;">
+                                ← Cancelar
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- JAVASCRIPT -->
+            <script type="text/javascript">
+
+                let ordenSeleccionada = {
+                    id: null,
+                    tipo: null,
+                    nombre: null,
+                    socio: null,
+                    monto: 0
+                };
+
+                function cambiarTab(tab) {
+                    // Ocultar todos los tabs
+                    document.getElementById('tab-ventas').classList.remove('active');
+                    document.getElementById('tab-compras').classList.remove('active');
+
+                    // Ocultar todos los botones de tab
+                    document.querySelectorAll('.nf-tab-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+
+                    // Mostrar tab seleccionado
+                    document.getElementById('tab-' + tab).classList.add('active');
+
+                    // Activar botón
+                    event.target.classList.add('active');
+
+                    // Limpiar selección
+                    limpiarSeleccion();
+                }
+
+                function seleccionarOrden(elemento, tipo, id) {
+                    // Limpiar selecciones anteriores
+                    document.querySelectorAll('.nf-orden-selector').forEach(sel => {
+                        sel.classList.remove('selected');
+                    });
+
+                    // Marcar como seleccionado
+                    elemento.classList.add('selected');
+
+                    // Obtener datos
+                    const nombre = elemento.querySelector('.nf-orden-nombre').innerText;
+                    const socio = elemento.querySelector('.nf-orden-info').innerText.split('|')[0].replace('Cliente:', '').replace('Proveedor:', '').trim();
+                    const monto = parseFloat(elemento.querySelector('.nf-orden-monto').innerText.replace('$ ', '').replace(',', '.'));
+
+                    // Guardar selección
+                    ordenSeleccionada = { id, tipo, nombre, socio, monto };
+
+                    // Actualizar resumen
+                    document.getElementById('resumenOrden').innerText = nombre;
+                    document.getElementById('resumenSocio').innerText = socio;
+                    document.getElementById('resumenMonto').innerText = '$' + monto.toFixed(2);
+
+                    // Mostrar sección de confirmación
+                    document.getElementById('seccionConfirmacion').style.display = 'block';
+                    
+                    // Scroll a la sección
+                    document.getElementById('seccionConfirmacion').scrollIntoView({ behavior: 'smooth' });
+                }
+
+                function limpiarSeleccion() {
+                    document.querySelectorAll('.nf-orden-selector').forEach(sel => {
+                        sel.classList.remove('selected');
+                    });
+                    document.getElementById('seccionConfirmacion').style.display = 'none';
+                    ordenSeleccionada = { id: null, tipo: null, nombre: null, socio: null, monto: 0 };
+                }
+
+                function crearFactura() {
+                    if (!ordenSeleccionada.id) {
+                        alert('Selecciona una orden');
+                        return;
+                    }
+
+                    const btn = event.target;
+                    const txtBtn = btn.innerText;
+                    btn.disabled = true;
+                    btn.innerHTML = '⏳ Procesando...';
+
+                    fetch('/facturacion/crear_factura', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            method: "call",
+                            params: {
+                                orden_id: ordenSeleccionada.id,
+                                tipo_orden: ordenSeleccionada.tipo
+                            }
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.result &amp;&amp; data.result.success) {
+                            alert(data.result.message);
+                            window.location.href = '/facturacion';
+                        } else {
+                            alert('Error: ' + (data.result ? data.result.message : 'Unknown'));
+                            btn.disabled = false;
+                            btn.innerText = txtBtn;
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Error de conexión');
+                        btn.disabled = false;
+                        btn.innerText = txtBtn;
+                    });
+                }
+
+            </script>
+
+        </t>
+
+    </template>
+
+</odoo>

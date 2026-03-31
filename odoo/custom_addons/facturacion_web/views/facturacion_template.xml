@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <template id="facturacion_template" name="Panel de Facturación">
+
+        <t t-call="website.layout">
+
+            <!-- ESTILOS PERSONALIZADOS -->
+            <style>
+                :root {
+                    --brand-primary: #166534;
+                    --brand-primary-dark: #0f4620;
+                    --brand-light: #dcfce7;
+                    --brand-secondary: #6b7280;
+                    --brand-bg: #f9fafb;
+                    --brand-card: #ffffff;
+                    --brand-border: #e5e7eb;
+                    --brand-text: #1f2937;
+                    --brand-text-muted: #6b7280;
+                    --brand-shadow: 0 1px 3px rgba(0,0,0,.08);
+                    --brand-radius: 0.75rem;
+                }
+
+                .facturacion-page {
+                    background: var(--brand-bg);
+                    min-height: 100vh;
+                    padding: 2rem 0;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .facturacion-card {
+                    background: var(--brand-card);
+                    border-radius: var(--brand-radius);
+                    box-shadow: var(--brand-shadow);
+                    border: 1px solid var(--brand-border);
+                    padding: 1.5rem;
+                    margin-bottom: 1.5rem;
+                    transition: box-shadow 0.3s ease;
+                }
+
+                .facturacion-card:hover {
+                    box-shadow: 0 4px 6px rgba(0,0,0,.1);
+                }
+
+                .facturacion-title {
+                    font-size: 1.75rem;
+                    font-weight: 700;
+                    color: var(--brand-text);
+                    margin: 0;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .facturacion-subtitle {
+                    font-size: 0.9rem;
+                    color: var(--brand-text-muted);
+                    margin-top: 0.25rem;
+                }
+
+                .facturacion-stat {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.5rem 1rem;
+                    background: var(--brand-light);
+                    border-radius: var(--brand-radius);
+                    color: var(--brand-primary);
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                }
+
+                .facturacion-badge {
+                    display: inline-block;
+                    padding: 0.25em 0.65em;
+                    border-radius: 999px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                }
+
+                .badge-draft { background: #fef3c7; color: #78350f; }
+                .badge-posted { background: var(--brand-light); color: var(--brand-primary); }
+                .badge-cancel { background: #fee2e2; color: #7f1d1d; }
+
+                .facturacion-tipo-badge {
+                    display: inline-block;
+                    padding: 0.2rem 0.6rem;
+                    border-radius: 0.3rem;
+                    font-size: 0.7rem;
+                    font-weight: 600;
+                    margin-right: 0.3rem;
+                }
+
+                .badge-venta { background: #dbeafe; color: #1e40af; }
+                .badge-compra { background: #fce7f3; color: #9d174d; }
+
+                .facturacion-table thead th {
+                    background: var(--brand-bg);
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.03em;
+                    color: var(--brand-text-muted);
+                    font-size: 0.8rem;
+                    border-color: var(--brand-border);
+                    padding: 1rem 0.75rem;
+                    border-bottom: 2px solid var(--brand-border);
+                }
+
+                .facturacion-table tbody td {
+                    padding: 0.75rem;
+                    border-color: var(--brand-border);
+                    vertical-align: middle;
+                    color: var(--brand-text);
+                    font-size: 0.9rem;
+                }
+
+                .facturacion-table tbody tr:hover {
+                    background: var(--brand-bg);
+                }
+
+                .facturacion-btn-primary {
+                    background: var(--brand-primary);
+                    border: none;
+                    color: white;
+                    padding: 0.5rem 1rem;
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                    border-radius: var(--brand-radius);
+                    transition: all 0.2s;
+                    font-family: 'Inter', sans-serif;
+                    cursor: pointer;
+                }
+
+                .facturacion-btn-primary:hover {
+                    background: var(--brand-primary-dark);
+                    color: white;
+                    text-decoration: none;
+                    transform: translateY(-1px);
+                }
+
+                .facturacion-btn-sm {
+                    padding: 0.35rem 0.65rem;
+                    font-size: 0.8rem;
+                    margin: 0 0.25rem;
+                }
+
+                .facturacion-btn-info {
+                    background: #3b82f6;
+                    color: white;
+                }
+
+                .facturacion-btn-info:hover {
+                    background: #2563eb;
+                    color: white;
+                    transform: translateY(-1px);
+                }
+
+                .facturacion-btn-danger {
+                    background: #f87171;
+                    color: white;
+                }
+
+                .facturacion-btn-danger:hover {
+                    background: #ef4444;
+                    color: white;
+                    transform: translateY(-1px);
+                }
+
+                .facturacion-filter-label {
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                    color: var(--brand-text-muted);
+                    text-transform: uppercase;
+                    letter-spacing: 0.025em;
+                    margin-bottom: 0.35rem;
+                }
+
+                .form-control, .form-select {
+                    border-color: var(--brand-border);
+                    border-radius: var(--brand-radius);
+                }
+
+                .form-control:focus, .form-select:focus {
+                    border-color: var(--brand-primary);
+                    box-shadow: 0 0 0 0.2rem rgba(22,101,52,.15);
+                }
+
+                .facturacion-empty {
+                    text-align: center;
+                    padding: 3rem 1rem;
+                    color: var(--brand-text-muted);
+                }
+
+                .facturacion-empty i {
+                    font-size: 3rem;
+                    margin-bottom: 1rem;
+                    display: block;
+                    color: #adb5bd;
+                }
+            </style>
+
+            <div class="facturacion-page">
+                <div class="container-lg">
+
+                    <!-- HEADER -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1 class="facturacion-title">Panel de Facturación</h1>
+                            <p class="facturacion-subtitle">Gestión integral de facturas de ventas y compras</p>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center">
+                            <div class="facturacion-stat">
+                                <strong>Total:</strong>
+                                <t t-esc="total_facturas"/>
+                            </div>
+                            <a href="/facturacion/nueva" class="btn facturacion-btn-primary">
+                                ➕ Crear Nueva Factura
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- FILTROS AVANZADOS -->
+                    <div class="facturacion-card">
+                        <form method="GET" action="/facturacion" class="row g-3 align-items-end">
+
+                            <!-- Número de Factura -->
+                            <div class="col-12 col-md-6 col-lg-2">
+                                <label class="facturacion-filter-label">Número Factura</label>
+                                <input type="text" name="numero_factura" class="form-control form-control-sm"
+                                       placeholder="Ej: FAC-001..."
+                                       t-att-value="filtros.get('numero_factura', '')"/>
+                            </div>
+
+                            <!-- Socio (Cliente/Proveedor) -->
+                            <div class="col-12 col-md-6 col-lg-2">
+                                <label class="facturacion-filter-label">Socio</label>
+                                <input type="text" name="socio" class="form-control form-control-sm"
+                                       placeholder="Nombre..."
+                                       t-att-value="filtros.get('socio', '')"/>
+                            </div>
+
+                            <!-- Tipo de Factura -->
+                            <div class="col-12 col-md-6 col-lg-2">
+                                <label class="facturacion-filter-label">Tipo</label>
+                                <select name="tipo" class="form-select form-select-sm">
+                                    <option value="">Ambas</option>
+                                    <option value="ventas" t-att-selected="filtros.get('tipo', '') == 'ventas'">Ventas</option>
+                                    <option value="compras" t-att-selected="filtros.get('tipo', '') == 'compras'">Compras</option>
+                                </select>
+                            </div>
+
+                            <!-- Estado -->
+                            <div class="col-12 col-md-6 col-lg-2">
+                                <label class="facturacion-filter-label">Estado</label>
+                                <select name="estado" class="form-select form-select-sm">
+                                    <option value="">Todos</option>
+                                    <option value="draft" t-att-selected="filtros.get('estado', '') == 'draft'">Borrador</option>
+                                    <option value="posted" t-att-selected="filtros.get('estado', '') == 'posted'">Publicada</option>
+                                    <option value="cancel" t-att-selected="filtros.get('estado', '') == 'cancel'">Cancelada</option>
+                                </select>
+                            </div>
+
+                            <!-- Botones -->
+                            <div class="col-12 col-lg-auto d-flex gap-2">
+                                <button type="submit" class="btn btn-sm btn-primary">🔍 Filtrar</button>
+                                <a href="/facturacion" class="btn btn-sm btn-outline-secondary">✕ Limpiar</a>
+                            </div>
+
+                        </form>
+                    </div>
+
+                    <!-- TABLA DE FACTURAS -->
+                    <div class="facturacion-card" style="overflow: hidden; padding: 0;">
+
+                        <t t-if="facturas">
+                            <div class="table-responsive">
+                                <table class="table facturacion-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Número</th>
+                                            <th>Tipo</th>
+                                            <th>Socio</th>
+                                            <th>Fecha</th>
+                                            <th>Estado</th>
+                                            <th>Monto Total</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="facturas" t-as="factura">
+                                            <tr>
+                                                <!-- Número de factura -->
+                                                <td style="font-weight: 600;">
+                                                    <t t-esc="factura.name"/>
+                                                </td>
+
+                                                <!-- Tipo (Venta/Compra) -->
+                                                <td>
+                                                    <t t-if="factura.move_type == 'out_invoice'">
+                                                        <span class="facturacion-tipo-badge badge-venta">Venta</span>
+                                                    </t>
+                                                    <t t-elif="factura.move_type == 'in_invoice'">
+                                                        <span class="facturacion-tipo-badge badge-compra">Compra</span>
+                                                    </t>
+                                                </td>
+
+                                                <!-- Socio (Cliente/Proveedor) -->
+                                                <td>
+                                                    <t t-esc="factura.partner_id.name"/>
+                                                </td>
+
+                                                <!-- Fecha -->
+                                                <td>
+                                                    <small><t t-esc="factura.invoice_date.strftime('%d/%m/%Y')"/></small>
+                                                </td>
+
+                                                <!-- Estado (badge) -->
+                                                <td>
+                                                    <t t-if="factura.state == 'draft'">
+                                                        <span class="facturacion-badge badge-draft">📋 Borrador</span>
+                                                    </t>
+                                                    <t t-elif="factura.state == 'posted'">
+                                                        <span class="facturacion-badge badge-posted">✓ Publicada</span>
+                                                    </t>
+                                                    <t t-elif="factura.state == 'cancel'">
+                                                        <span class="facturacion-badge badge-cancel">✕ Cancelada</span>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <span class="facturacion-badge badge-draft"><t t-esc="factura.state"/></span>
+                                                    </t>
+                                                </td>
+
+                                                <!-- Monto Total -->
+                                                <td style="font-weight: 600; color: var(--brand-primary);">
+                                                    $ <t t-esc="'%.2f' % factura.amount_total"/>
+                                                </td>
+
+                                                <!-- Acciones -->
+                                                <td>
+                                                    <a t-attf-href="/facturacion/pdf/{{factura.id}}" target="_blank" 
+                                                       class="btn facturacion-btn-sm facturacion-btn-info">
+                                                        📥 PDF
+                                                    </a>
+                                                    <t t-if="factura.state == 'draft'">
+                                                        <button type="button" class="btn facturacion-btn-sm facturacion-btn-danger"
+                                                                onclick="cancelarFactura(this)" t-att-data-factura-id="factura.id">
+                                                            ✕ Cancelar
+                                                        </button>
+                                                    </t>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+
+                        <!-- Estado vacío -->
+                        <t t-else="">
+                            <div class="facturacion-empty">
+                                <i>🔭</i>
+                                <h5>No se encontraron facturas</h5>
+                                <p class="mb-0">Intenta ajustar los filtros o <a href="/facturacion">limpiar la búsqueda</a>.</p>
+                            </div>
+                        </t>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- JAVASCRIPT -->
+            <script type="text/javascript">
+                function cancelarFactura(btn) {
+                    const facturaId = btn.getAttribute('data-factura-id');
+                    const txtBtn = btn.innerText;
+
+                    if (!confirm('¿Cancelar esta factura?')) return;
+
+                    btn.disabled = true;
+                    btn.innerHTML = '⏳ Procesando...';
+
+                    fetch('/facturacion/cancelar_factura', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            method: "call",
+                            params: { factura_id: parseInt(facturaId) }
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.result &amp;&amp; data.result.success) {
+                            alert(data.result.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (data.result ? data.result.message : 'Unknown'));
+                            btn.disabled = false;
+                            btn.innerText = txtBtn;
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Error de conexión');
+                        btn.disabled = false;
+                        btn.innerText = txtBtn;
+                    });
+                }
+            </script>
+
+        </t>
+    </template>
+</odoo>
