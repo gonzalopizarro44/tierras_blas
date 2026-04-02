@@ -18,6 +18,28 @@ Módulo custom para personalizar la tienda online (/shop) de Odoo 19 con las sig
   2. En página de detalles (`tienda_template.xml` línea ~70)
 - Fácil de reactivar descomenando el código
 
+#### 3. ✅ Botón "Quick Reorder" (DESHABILITADO Y OCULTO)
+- Este botón permitía acceder al carrito y listar productos (vulnerabilidad de seguridad)
+- Ha sido **completamente ocultado** 
+- Ubicación: En el encabezado de "Order summary" del carrito
+- Está comentado y puede reactivarse si es necesario (aunque no recomendado)
+
+#### 4. ✅ Elemento `#product_option_block` (OCULTADO)
+- Este elemento en la página de detalles contenía botones adicionales de opciones
+- Ha sido **ocultado completamente** para evitar acceso al carrito
+- Ubicación: En la página de detalles del producto (/shop/producto-xxx)
+
+#### 5. ✅ Botón "Add to Cart" en Lista de Deseos (DESHABILITADO Y OCULTO)
+- En /shop/wishlist, los productos mostraban un botón "Add to Cart"
+- Esto permitía comprar productos directamente desde el wishlist
+- Ha sido **completamente ocultado**
+- Está comentado para poder reactivarse en el futuro
+
+#### 6. ✅ Botón "Add to Wishlist" (DESHABILITADO Y OCULTO)
+- En la página de detalles del producto aparecía el botón "Add to Wishlist"
+- Se ocultó por consistencia y simplicidad de interfaz
+- Está comentado para poder reactivarse
+
 ---
 
 ## Configuración Rápida
@@ -48,21 +70,33 @@ window.open(urlBot, '_blank');
 
 ---
 
-## Para Reactivar el Carrito
+---
 
-Si en algún momento quieres reactivar el botón "Agregar al carrito":
+## Para Reactivar Elementos
 
-### En Tarjetas de Producto (/shop)
+### Botón "Agregar al Carrito" (Tarjetas y Detalles)
 1. Abre: `views/tienda_template.xml`
-2. Busca: "BOTÓN: AGREGAR AL CARRITO (COMENTADO - DESHABILITADO)" (primera sección)
-3. Descomenta ese bloque (`<!-- -->`)
-4. Comenta o elimina el botón "Solicitar cotización" de arriba
+2. Busca: "BOTÓN: AGREGAR AL CARRITO (COMENTADO - DESHABILITADO)" (hay DOS)
+3. Descomenta ese bloque
+4. Comenta o elimina el botón "Solicitar cotización" correspondiente
 
-### En Página de Detalles (/shop/producto-xxx)
+### Botón "Add to Cart" en Wishlist
 1. Abre: `views/tienda_template.xml`
-2. Busca: "BOTÓN: AGREGAR AL CARRITO (COMENTADO - DESHABILITADO)" (segunda sección)
-3. Descomenta ese bloque (`<!-- -->`)
-4. Comenta o elimina el botón "Solicitar cotización" de arriba
+2. Busca: "BOTÓN: ADD TO CART EN WISHLIST (DESHABILITADO Y OCULTO)"
+3. Descomenta ese bloque
+
+### Botón "Add to Wishlist"
+1. En tarjetas: Ya fue comentado manualmente (según mencionaste)
+2. En página de detalles:
+   - Abre: `views/tienda_template.xml`
+   - Busca: "BOTÓN: ADD TO WISHLIST EN DETALLES (DESHABILITADO Y OCULTO)"
+   - Descomenta ese bloque
+
+### Elemento `#product_option_block`
+1. Abre: `views/tienda_template.xml`
+2. Busca: template id="tienda_web_hide_product_option_block"
+3. Por ahora está simplemente ocultado con `d-none`, no comentado
+4. Para reactivar, comenta o elimina el atributo `d-none`
 
 ---
 
@@ -93,10 +127,49 @@ tienda_web/
 - **XPath**: Busca elemento con id `add_to_cart`
 - **Ubicación en Odoo**: `/odoo/addons/website_sale/views/templates.xml:2315`
 
+### Plantilla 3: `tienda_web_quick_reorder_button` (Botón Quick Reorder)
+- **Heredada de**: `website_sale.quick_reorder_button`
+- **XPath**: Busca span con atributo `t-att-title='quick_reorder_button_title'`
+- **Ubicación en Odoo**: `/odoo/addons/website_sale/views/templates.xml:3124`
+- **Razón**: Permitía acceso al carrito (/shop/cart)
+
+### Plantilla 4: `tienda_web_hide_product_option_block` (Ocultar product_option_block)
+- **Heredada de**: `website_sale.cta_wrapper`
+- **Método**: Añade clase CSS `d-none` al div con id `product_option_block`
+- **Ubicación en Odoo**: `/odoo/addons/website_sale/views/templates.xml:2339`
+- **Razón**: Contenía botones adicionales de opciones que permitían comprar
+
+### Plantilla 5: `tienda_web_hide_wishlist_add_to_cart` (Ocultar botón en Wishlist)
+- **Heredada de**: `website_sale_wishlist.product_wishlist`
+- **XPath**: Busca botón con id `add_to_cart_button`
+- **Ubicación en Odoo**: `/odoo/addons/website_sale_wishlist/views/website_sale_wishlist_template.xml:362`
+- **Razón**: Permitía comprar directamente desde la lista de deseos
+
+### Plantilla 6: `tienda_web_hide_wishlist_button` (Ocultar botón "Add to Wishlist")
+- **Heredada de**: `website_sale_wishlist.product_add_to_wishlist`
+- **XPath**: Busca elemento con atributo `data-action='o_wishlist'`
+- **Ubicación en Odoo**: `/odoo/addons/website_sale_wishlist/views/website_sale_wishlist_template.xml:100`
+- **Razón**: Simplificar interfaz, los usuarios solo solicitan cotizaciones
+
 ### Scripts JavaScript
 - **Función 1**: `solicitarCotizacion(element)` - Para tarjetas
 - **Función 2**: `solicitarCotizacionDetail(event)` - Para página de detalles
 - Ambas comparten la misma lógica, solo diferencia en cómo obtienen los datos del producto
+
+---
+
+## 📋 Resumen de Seguridad - 6 Vulnerabilidades Cerradas
+
+| # | Elemento | Estado | Ubicación | Tipo |
+|---|---|---|---|---|
+| 1 | **Agregar al carrito** (tarjetas) | ✅ Comentado | /shop | Botón de compra |
+| 2 | **Agregar al carrito** (detalles) | ✅ Comentado | /shop/producto-xxx | Botón de compra |
+| 3 | **Quick Reorder** | ✅ Oculto | /shop/cart | Atajo compra rápida |
+| 4 | **#product_option_block** | ✅ Oculto | /shop/producto-xxx | Opciones adicionales |
+| 5 | **Add to Cart** (wishlist) | ✅ Comentado | /shop/wishlist | Botón de compra |
+| 6 | **Add to Wishlist** | ✅ Comentado | /shop/producto-xxx | Navegación compras |
+
+**Resultado**: Los usuarios **SOLO pueden solicitar cotizaciones** a través del botón dedicado. Todos los caminos para comprar directamente han sido cerrados. 🔒
 
 ---
 
