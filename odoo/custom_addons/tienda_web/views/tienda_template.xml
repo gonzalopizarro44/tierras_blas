@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════════
+             PERSONALIZACIÓN: Botones de acción en tarjetas de productos (/shop)
+             ═══════════════════════════════════════════════════════════════════════════
+             
+             CAMBIOS:
+             1. Reemplazamos el botón "Add to Cart" con "Solicitar cotización"
+             2. El botón original está comentado para poder reactivarlo fácilmente
+             
+             PLANTILLA HEREDADA: website_sale.shop_product_buttons
+             (Ubicación: /odoo/addons/website_sale/views/product_tile_templates.xml)
+        -->
+        
+        <template id="tienda_web_shop_product_buttons" inherit_id="website_sale.shop_product_buttons">
+            
+            <!-- Buscar y reemplazar el botón principal (Add to Cart) -->
+            <xpath expr="//button[contains(@class, 'o_wsale_product_btn_primary')]" position="replace">
+                
+                <!-- ═════════════════════════════════════════════════════════════════
+                     BOTÓN: SOLICITAR COTIZACIÓN (NUEVO) 
+                     ═════════════════════════════════════════════════════════════════ -->
+                <button type="button" 
+                        class="o_wsale_product_btn_primary btn btn-success"
+                        onclick="solicitarCotizacion(this)"
+                        title="Solicitar una cotización de este producto"
+                        aria-label="Request quote"
+                        t-att-data-product-id="product.id"
+                        t-att-data-product-name="product.name">
+                    <i class="fa fa-fw fa-envelope-open-o o_not-animable" role="presentation"/>
+                    <span class="o_label small ms-1">Solicitar cotización</span>
+                </button>
+                
+                <!-- ═════════════════════════════════════════════════════════════════
+                     BOTÓN: AGREGAR AL CARRITO (COMENTADO - DESHABILITADO)
+                     ═════════════════════════════════════════════════════════════════
+                     
+                     Para reactivar el carrito, descomenta el siguiente botón y
+                     re-comenta el botón "Solicitar cotización" arriba.
+                     
+                    <button type="button"
+                            class="o_wsale_product_btn_primary a-submit btn btn-primary"
+                            aria-label="Add to cart"
+                            title="Add to cart"
+                            t-att-data-show-quantity="is_view_active('website_sale.product_quantity')">
+                        <i class="fa fa-fw fa-shopping-cart o_not-animable" role="presentation"/>
+                        <span class="o_label small ms-1">Add to Cart</span>
+                    </button>
+                     
+                -->
+                
+            </xpath>
+        </template>
+
+        <!-- ═══════════════════════════════════════════════════════════════════════════
+             SCRIPT: Gestor de solicitud de cotización
+             ═══════════════════════════════════════════════════════════════════════════
+        -->
+        <template id="tienda_web_quotation_script" inherit_id="website.layout">
+            <xpath expr="//body" position="inside">
+                <script type="text/javascript">
+                    <![CDATA[
+                    /**
+                     * ─────────────────────────────────────────────────────────────
+                     * FUNCIÓN: solicitarCotizacion(element)
+                     * ─────────────────────────────────────────────────────────────
+                     * 
+                     * Gestiona la solicitud de cotización de un producto.
+                     * 
+                     * COMPORTAMIENTO ACTUAL:
+                     * - Muestra una alerta con el nombre del producto
+                     * - Redirige al bot de Martín cuando tengas el nº de WhatsApp
+                     * 
+                     * CONFIGURACIÓN PENDIENTE:
+                     * 1. Reemplaza MARTIN_WHATSAPP_NUMBER con el número real
+                     * 2. Descomenta window.open(urlBot, '_blank')
+                     */
+                    function solicitarCotizacion(element) {
+                        // ─────────────────────────────────────────────────────
+                        // OBTENER DATOS DEL PRODUCTO
+                        // ─────────────────────────────────────────────────────
+                        const productName = element.getAttribute('data-product-name');
+                        const productId = element.getAttribute('data-product-id');
+                        
+                        // ─────────────────────────────────────────────────────
+                        // CONFIGURACIÓN: Número de WhatsApp de Martín
+                        // ─────────────────────────────────────────────────────
+                        // TODO: Reemplazar "" con el número de Martín
+                        // Formato: "34666666666" (código país + número sin +)
+                        const MARTIN_WHATSAPP_NUMBER = "";
+                        
+                        // ─────────────────────────────────────────────────────
+                        // CONSTRUIR MENSAJE Y URL
+                        // ─────────────────────────────────────────────────────
+                        const mensaje = `Hola, estoy interesado en la siguiente cotización:\n\n` +
+                                       `Producto: ${productName}\n\n` +
+                                       `Me gustaría recibir más información.`;
+                        
+                        const urlBot = 'https://api.whatsapp.com/send/?phone=' + MARTIN_WHATSAPP_NUMBER + 
+                                       '&text=' + encodeURIComponent(mensaje);
+                        
+                        // ─────────────────────────────────────────────────────
+                        // COMPORTAMIENTO TEMPORAL (sin número de WhatsApp)
+                        // ─────────────────────────────────────────────────────
+                        if (MARTIN_WHATSAPP_NUMBER === "") {
+                            // Mostrar alerta temporal 
+                            alert('📋 Solicitud de cotización recibida:\n\n' +
+                                  '✅ Producto: ' + productName + '\n\n' +
+                                  '⏳ Cuando tengas el número de Martín, ' +
+                                  'serás redirigido automáticamente a WhatsApp');
+                        } else {
+                            // Cuando tengas el número, abre WhatsApp directamente
+                            // TODO: Descomentar esta línea
+                            // window.open(urlBot, '_blank');
+                        }
+                    }
+                    ]]>
+                </script>
+            </xpath>
+        </template>
+
+    </data>
+</odoo>
