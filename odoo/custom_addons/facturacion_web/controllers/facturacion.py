@@ -162,20 +162,31 @@ class FacturacionController(http.Controller):
 
         # ── Generar y descargar PDF ──
         try:
-            pdf_content, _ = request.env.ref(
-                'account.account_invoices'
-            ).render_qweb_pdf([factura_id])
+            # Buscar el reporte qweb-pdf registrado para facturas
+            reporte = request.env['ir.actions.report'].sudo().search([
+                ('model', '=', 'account.move'),
+                ('report_type', '=', 'qweb-pdf')
+            ], limit=1)
+            
+            if not reporte:
+                return request.redirect('/facturacion')
+            
+            # Renderizar PDF
+            pdf_content, _ = reporte.render_qweb_pdf([factura_id])
+            
+            # Preparar nombre de archivo
+            nombre_archivo = f"{factura.name}.pdf"
             
             return request.make_response(
                 pdf_content,
                 [
                     ('Content-Type', 'application/pdf'),
                     ('Content-Disposition', 
-                     f'attachment; filename="{factura.name}.pdf"'),
+                     f'attachment; filename="{nombre_archivo}"'),
                 ]
             )
         except Exception as e:
-            return request.redirect(f'/facturacion')
+            return request.redirect('/facturacion')
 
     # ═════════════════════════════════════════════════════════════════════════
     # RUTA POST: /facturacion/crear_factura - Crear factura desde orden
