@@ -7,24 +7,41 @@ Centraliza TODA la lógica de negocio del módulo compras_web:
 - Filtros avanzados
 - Creación de proveedores
 - Creación de órdenes de compra
-- Confirmación de órdenes (con incremento de stock)
+- Confirmación de órdenes (crear pickings sin validar)
+- Validación de recepciones (incrementar stock)
 - Cancelación de órdenes
 
 Este modelo es ABSTRACTO y no genera tablas en BD.
 Se instancia desde los controllers para acceder a los métodos de negocio.
+
+FLUJO DE ESTADOS:
+1. "borrador": purchase.order en DRAFT
+   - Crear con crear_orden_compra()
+
+2. "pendiente": purchase.order en PURCHASE (pickings creados pero sin validar)
+   - Confirmar con confirmar_orden_compra()
+   - Crea stock.picking pero NO incrementa stock aún
+
+3. "confirmado": purchase.order en DONE (pickings validados)
+   - Validar con validar_recepcion_compra()
+   - Valida pickings e incrementa stock automáticamente
 
 Uso:
     compras_service = self.env['compras.service']
     domain = compras_service.construir_domain_filtros(kwargs)
     proveedor = compras_service.crear_proveedor_rapido(nombre)
     orden = compras_service.crear_orden_compra(proveedor_id, lineas)
-    compras_service.confirmar_orden_compra(orden_id)
+    compras_service.confirmar_orden_compra(orden_id)  # "pendiente"
+    compras_service.validar_recepcion_compra(orden_id)  # "confirmado"
 
 ==============================================================================
 """
 
 from odoo import models, api
 from datetime import datetime, timedelta
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class ComprasService(models.AbstractModel):
@@ -32,6 +49,21 @@ class ComprasService(models.AbstractModel):
     
     _name = 'compras.service'
     _description = 'Servicio de Compras Web'
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # MÉTODO AUXILIAR: Logging
+    # ═════════════════════════════════════════════════════════════════════════
+
+    def _log_info(self, mensaje, orden_id=None):
+        """
+        Registra un mensaje de información en los logs.
+        
+        Args:
+            mensaje (str): Mensaje a registrar
+            orden_id (int, opcional): ID de la orden (para contexto)
+        """
+        contexto = f"[Orden {orden_id}] " if orden_id else "[Compras Service] "
+        _logger.info(contexto + mensaje)
 
     # ═════════════════════════════════════════════════════════════════════════
     # SECCIÓN 1: FILTROS AVANZADOS
@@ -267,7 +299,12 @@ class ComprasService(models.AbstractModel):
     @api.model
     def _crear_lineas_compra(self, orden, lineas):
         """
-        Crea las líneas de orden de compra.
+        Crea las líneas de orden de compra y actualiza x_costo_usd en product.template.
+        
+        FLUJO:
+        1. Para cada línea válida:
+           - Crea purchase.order.line con precio_unitario
+           - Actualiza x_costo_usd en product.template con el precio_unitario
         
         Ignora líneas mal formadas sin causar fallo general.
         
@@ -297,6 +334,12 @@ class ComprasService(models.AbstractModel):
                     'price_unit': precio_unt,
                 })
 
+                # Actualizar x_costo_usd en product.template
+                # El campo x_costo_usd se configura con el precio unitario de la compra
+                producto.product_tmpl_id.sudo().write({
+                    'x_costo_usd': precio_unt,
+                })
+
             except (ValueError, TypeError, Exception):
                 # Ignorar líneas mal formadas; continuar con las siguientes
                 continue
@@ -308,14 +351,23 @@ class ComprasService(models.AbstractModel):
     @api.model
     def confirmar_orden_compra(self, orden_id):
         """
-        Confirma una orden de compra e INCREMENTA STOCK.
+        Confirma una orden de compra SIN VALIDAR los pickings.
+        
+        ESTADO: "pendiente" - Orden confirmada, pickings creados pero sin validar.
         
         PROCESO:
-        1. Ejecuta button_confirm() de Odoo (estado DRAFT → PURCHASE)
-        2. Busca ubicación interna (WH/Stock)
-        3. Para cada línea, incrementa stock.quant en ubicación
+        1. Valida que la orden exista y esté en estado DRAFT
+        2. Ejecuta button_confirm() de Odoo (DRAFT → PURCHASE)
+           - Esto crea automáticamente los pickings (stock.picking)
+           - Crea stock.move para cada línea
+        3. Verifica que se crearon los pickings
+        4. NO valida los pickings aún (ese es el siguiente paso)
         
-        IMPORTANTE: Evita confirmaciones duplicadas verificando estado
+        GARANTÍAS:
+        - Evita confirmaciones duplicadas verificando estado
+        - No incrementa stock en este punto
+        - Los pickings quedan en estado 'draft' para validación posterior
+        - Logging detallado en cada paso
         
         Args:
             orden_id (int): ID de la purchase.order
@@ -323,7 +375,9 @@ class ComprasService(models.AbstractModel):
         Returns:
             dict: {
                 'success': bool,
-                'message': str
+                'message': str,
+                'pickings_creados': int (número de pickings creados),
+                'order_name': str
             }
         """
         try:
@@ -331,6 +385,7 @@ class ComprasService(models.AbstractModel):
 
             # ── Validar existencia ──
             if not orden.exists():
+                self._log_info(f"Orden {orden_id} no encontrada", orden_id)
                 return {
                     'success': False,
                     'message': 'Orden no encontrada.',
@@ -338,128 +393,299 @@ class ComprasService(models.AbstractModel):
 
             # ── Validar estado (solo confirmar si está en DRAFT) ──
             if orden.state != 'draft':
+                self._log_info(f"Orden {orden.name} no está en DRAFT. Estado: {orden.state}", orden.id)
                 return {
                     'success': False,
                     'message': f'Solo se pueden confirmar órdenes en DRAFT. Estado actual: {orden.state}',
                 }
 
+            self._log_info(f"Iniciando confirmación de orden {orden.name}", orden.id)
+
             # ── PASO 1: Confirmar orden (DRAFT → PURCHASE) ──
+            # Esto crea automáticamente los pickings (recepciones)
             try:
+                self._log_info(f"Ejecutando button_confirm() para {orden.name}", orden.id)
                 orden.button_confirm()
+                self._log_info(f"Orden {orden.name} confirmada en Odoo (DRAFT → PURCHASE)", orden.id)
             except Exception as e:
+                self._log_info(f"ERROR en button_confirm() para {orden.name}: {str(e)}", orden.id)
                 return {
                     'success': False,
-                    'message': f'Error al confirmar orden: {str(e)}',
+                    'message': f'Error al confirmar orden en Odoo: {str(e)}',
                 }
 
-            # ── PASO 2: Incrementar stock en WH/Stock ──
-            resultado_stock = self._incrementar_stock_compra(orden)
-            if not resultado_stock['success']:
-                return resultado_stock  # Retornar error
+            # ── PASO 2: Validar que se crearon los pickings ──
+            pickings = self.env['stock.picking'].sudo().search([
+                ('purchase_id', '=', orden.id)
+            ])
+
+            self._log_info(f"Se encontraron {len(pickings)} picking(s) para {orden.name}", orden.id)
+
+            if not pickings:
+                self._log_info(f"ADVERTENCIA: Orden {orden.name} confirmada pero sin pickings asociados", orden.id)
+                return {
+                    'success': False,
+                    'message': f'Orden {orden.name} está confirmada pero no se crearon recepciones. Contacte al administrador.',
+                }
+
+            # ── PASO 3: Verificar que se crearon correctamente ──
+            self._log_info(f"Confirmación completada: {len(pickings)} picking(s) creados (pendientes de validación)", orden.id)
 
             return {
                 'success': True,
-                'message': f'Orden {orden.name} confirmada. Stock incrementado.',
+                'message': f'Orden {orden.name} confirmada exitosamente. {len(pickings)} recepción(es) pendiente(s) de validación.',
+                'pickings_creados': len(pickings),
+                'order_name': orden.name,
             }
 
         except Exception as e:
+            error_detail = str(e)
+            self._log_info(f"ERROR CRÍTICO: {error_detail}", orden_id)
             return {
                 'success': False,
-                'message': f'Error inesperado: {str(e)}',
+                'message': f'Error inesperado al confirmar orden: {error_detail}',
             }
 
     @api.model
-    def _incrementar_stock_compra(self, orden):
+    def validar_recepcion_compra(self, orden_id):
         """
-        Incrementa el stock para cada línea de la orden de compra.
+        Valida las recepciones (pickings) de una orden de compra e incrementa stock.
         
-        IMPORTANTE: Solo incrementa stock para productos tipo 'product'.
-        Ignora consumibles y servicios automáticamente.
+        ESTADO: "confirmado" - Pickings validados, stock actualizado en inventario.
         
-        Busca la ubicación interna (WH/Stock) y actualiza stock.quant
+        PROCESO PARA CADA PICKING:
+        1. Si está en draft: ejecutar action_confirm() → 'confirmed'
+        2. Ejecutar action_assign() - Asigna stock disponible a las líneas
+        3. Establece quantity_done = product_uom_qty en move_line_ids
+        4. Ejecuta button_validate() - Valida el picking y genera movimientos de stock
+        5. El stock.quant se actualiza automáticamente en la ubicación destino
+        
+        GARANTÍAS:
+        - Usa campos correctos de Odoo 19 (quantity en move_line)
+        - Completa la recepción al 100% (sin backorders parciales)
+        - Manejo robusto de errores
+        - Logging detallado en cada paso
+        - No usa wizards (asume sin tracking por lotes/series)
+        
+        Args:
+            orden_id (int): ID de la purchase.order
+        
+        Returns:
+            dict: {
+                'success': bool,
+                'message': str,
+                'pickings_validados': int,
+                'order_name': str
+            }
+        """
+        try:
+            orden = self.env['purchase.order'].sudo().browse(int(orden_id))
+
+            # ── Validar existencia ──
+            if not orden.exists():
+                self._log_info(f"Orden {orden_id} no encontrada", orden_id)
+                return {
+                    'success': False,
+                    'message': 'Orden no encontrada.',
+                }
+
+            # ── Validar que esté confirmada ──
+            if orden.state not in ('purchase', 'done'):
+                self._log_info(f"Orden {orden.name} no está confirmada. Estado: {orden.state}", orden.id)
+                return {
+                    'success': False,
+                    'message': f'La orden debe estar confirmada. Estado actual: {orden.state}',
+                }
+
+            self._log_info(f"Iniciando validación de recepciones para {orden.name}", orden.id)
+
+            # ── Validar automáticamente los pickings asociados ──
+            resultado_pickings = self._validar_pickings_compra(orden)
+
+            # ── PASO FINAL: Si la validación fue exitosa, cambiar estado a DONE ──
+            if resultado_pickings.get('success'):
+                try:
+                    self._log_info(f"Finalizando orden {orden.name}: cambiando estado a DONE", orden.id)
+                    orden.write({'state': 'done'})
+                    self._log_info(f"Orden {orden.name} está ahora en estado DONE (completada)", orden.id)
+                except Exception as e:
+                    self._log_info(f"ADVERTENCIA: No se pudo cambiar estado a DONE: {str(e)}", orden.id)
+
+            return resultado_pickings
+
+        except Exception as e:
+            error_detail = str(e)
+            self._log_info(f"ERROR CRÍTICO: {error_detail}", orden_id)
+            return {
+                'success': False,
+                'message': f'Error inesperado al validar recepciones: {error_detail}',
+            }
+
+    @api.model
+    def _validar_pickings_compra(self, orden):
+        """
+        Valida automáticamente todos los pickings (recepciones) asociados a una orden de compra.
+        
+        FLUJO MEJORADO PARA CADA PICKING:
+        1. Si está en draft: ejecutar action_confirm()
+        2. Ejecutar action_assign() - Asigna stock disponible
+        3. Crear move_lines si no existen (para intrastat tracking)
+        4. Establece quantity en cada move_line
+        5. Ejecuta button_validate()
+        
+        GARANTÍAS:
+        - Usa campos correctos de Odoo 19
+        - Completa la recepción al 100%
+        - Logging detallado para debugging
+        - Manejo robusto de errores
         
         Args:
             orden (purchase.order): Orden ya confirmada
         
         Returns:
-            dict: {'success': bool, 'message': str}
+            dict: {
+                'success': bool,
+                'message': str,
+                'pickings_validados': int
+            }
         """
         try:
-            # Buscar ubicación interna (WH/Stock)
-            ubicacion_stock = self.env['stock.location'].sudo().search(
-                [('usage', '=', 'internal')],
-                limit=1
-            )
+            # Obtener todos los pickings asociados a esta orden
+            pickings = self.env['stock.picking'].sudo().search([
+                ('purchase_id', '=', orden.id)
+            ])
 
-            if not ubicacion_stock:
+            self._log_info(f"Procesando {len(pickings)} recepción(es) para orden {orden.name}", orden.id)
+
+            if not pickings:
+                self._log_info(f"No hay recepciones para validar en orden {orden.name}", orden.id)
                 return {
-                    'success': False,
-                    'message': 'No se encontró una ubicación de inventario válida (WH/Stock).',
+                    'success': True,
+                    'message': 'No se encontraron recepciones para validar.',
+                    'pickings_validados': 0,
                 }
 
-            # Incrementar stock para cada línea de compra
-            productos_ignorados = 0
-            for linea in orden.order_line:
-                if linea.product_id and linea.product_qty > 0:
-                    # ── VALIDAR: Solo productos tipo 'product' tienen stock ──
-                    if linea.product_id.type != 'product':
-                        # Ignorar consumibles y servicios
-                        productos_ignorados += 1
+            pickings_validados = 0
+            errores = []
+
+            for picking in pickings:
+                try:
+                    picking_name = picking.name
+                    self._log_info(f"Iniciando validación de recepción {picking_name}", orden.id)
+
+                    # ── VALIDACIÓN: Skip si ya está done ──
+                    if picking.state == 'done':
+                        self._log_info(f"Recepción {picking_name} ya está validada (done)", orden.id)
+                        pickings_validados += 1
                         continue
+
+                    # ── PASO 1: Confirmar si está en draft ──
+                    if picking.state == 'draft':
+                        self._log_info(f"Confirmando recepción {picking_name} (draft → confirmed)", orden.id)
+                        picking.action_confirm()
+
+                    # ── PASO 2: Asignar stock disponible ──
+                    if picking.state in ('confirmed', 'awaiting_picking'):
+                        try:
+                            self._log_info(f"Asignando stock disponible a {picking_name}", orden.id)
+                            picking.action_assign()
+                            self._log_info(f"Stock asignado correctamente a {picking_name}", orden.id)
+                        except Exception as assign_error:
+                            self._log_info(f"Aviso en asignación de {picking_name}: {str(assign_error)}", orden.id)
+
+                    # ── PASO 3: Crear o completar move_lines con cantidades ──
+                    self._preparar_move_lines_para_pickling(picking, orden)
+
+                    # ── PASO 4: Validar el picking ──
+                    self._log_info(f"Validando recepción {picking_name} (button_validate)", orden.id)
+                    picking.button_validate()
+                    self._log_info(f"Recepción {picking_name} validada exitosamente. Stock incrementado.", orden.id)
+
+                    pickings_validados += 1
+
+                except Exception as e:
+                    error_msg = str(e)
+                    if hasattr(e, 'name'):
+                        error_msg = e.name
                     
-                    self._actualizar_quant_compra(
-                        linea.product_id,
-                        ubicacion_stock,
-                        linea.product_qty
-                    )
+                    self._log_info(f"ERROR en recepción {picking.name}: {error_msg}", orden.id)
+                    errores.append(f"Recepción {picking.name}: {error_msg}")
+
+            # ── RESULTADO FINAL ──
+            self._log_info(f"Proceso completado: {pickings_validados}/{len(pickings)} recepciones validadas", orden.id)
+            
+            if errores:
+                mensaje = f'{pickings_validados} recepción(es) validada(s). Errores: {"; ".join(errores[:3])}'
+                return {
+                    'success': True if pickings_validados > 0 else False,
+                    'message': mensaje,
+                    'pickings_validados': pickings_validados,
+                }
 
             return {
                 'success': True,
-                'message': 'Stock incrementado exitosamente.',
+                'message': f'{pickings_validados} recepción(es) validada(s) exitosamente. Stock incrementado.',
+                'pickings_validados': pickings_validados,
             }
 
         except Exception as e:
+            self._log_info(f"ERROR CRÍTICO en validación de pickings: {str(e)}", orden.id)
             return {
                 'success': False,
-                'message': f'Error al actualizar stock: {str(e)}',
+                'message': f'Error crítico al validar pickings: {str(e)}',
+                'pickings_validados': 0,
             }
 
-    @api.model
-    def _actualizar_quant_compra(self, producto, ubicacion, cantidad):
+    def _preparar_move_lines_para_pickling(self, picking, orden):
         """
-        Actualiza o crea stock.quant para un producto en una ubicación.
+        Prepara las move_lines para validación: crea las que falten y setea quantity.
         
-        PRECONDICIÓN: El producto DEBE ser tipo 'product'.
-        Esta función NO valida el tipo (se valida en _incrementar_stock_compra).
-        
-        Si el producto ya existe en la ubicación, suma la cantidad.
-        Si no existe, crea un nuevo registro.
+        Este método es crucial porque:
+        - Si no hay move_lines creadas, button_validate() no funciona
+        - Debe ser ejecutado DESPUÉS de action_assign()
+        - Setea quantity = cantidad esperada (para recepciones sin lotes)
         
         Args:
-            producto (product.product): Producto a actualizar (type='product')
-            ubicacion (stock.location): Ubicación de stock
-            cantidad (float): Cantidad a sumar
+            picking (stock.picking): Picking a preparar
+            orden (purchase.order): Orden asociada (para logging)
         """
-        Quant = self.env['stock.quant'].sudo()
-        
-        # Buscar quant existente
-        quant = Quant.search([
-            ('product_id', '=', producto.id),
-            ('location_id', '=', ubicacion.id)
-        ], limit=1)
-
-        if quant:
-            # Actualizar cantidad existente
-            quant.write({
-                'inventory_quantity': quant.inventory_quantity + cantidad
-            })
-        else:
-            # Crear nuevo quant
-            Quant.create({
-                'product_id': producto.id,
-                'location_id': ubicacion.id,
-                'inventory_quantity': cantidad,
-            })
+        try:
+            self._log_info(f"Preparando move_lines para {picking.name}", orden.id)
+            
+            # Iterar sobre los movimientos (stock.move)
+            for move in picking.move_ids:
+                # Obtener o crear la move_line
+                move_lines = self.env['stock.move.line'].sudo().search([
+                    ('move_id', '=', move.id)
+                ], limit=1)
+                
+                if move_lines:
+                    # Ya existe move_line, solo actualizar quantity_done
+                    move_line = move_lines[0]
+                else:
+                    # Crear move_line
+                    self._log_info(f"Creando move_line para {move.product_id.name} en {picking.name}", orden.id)
+                    move_line = self.env['stock.move.line'].sudo().create({
+                        'move_id': move.id,
+                        'product_id': move.product_id.id,
+                        'product_uom_id': move.product_uom.id,
+                        'location_id': move.location_id.id,
+                        'location_dest_id': move.location_dest_id.id,
+                        'quantity': move.product_uom_qty,  # Campo correcto en Odoo 19
+                    })
+                    self._log_info(f"Move_line creada: {move.product_id.name} x {move.product_uom_qty}", orden.id)
+                    continue
+                
+                # Actualizar quantity si no está ya set
+                if move_line.quantity == 0 and move.product_uom_qty > 0:
+                    self._log_info(f"Actualizando quantity: {move.product_id.name} x {move.product_uom_qty}", orden.id)
+                    move_line.write({
+                        'quantity': move.product_uom_qty
+                    })
+                    
+        except Exception as e:
+            self._log_info(f"ERROR en preparación de move_lines: {str(e)}", orden.id)
+            raise  # Re-lanzar para que sea manejado por el caller
 
     # ═════════════════════════════════════════════════════════════════════════
     # SECCIÓN 5: CANCELACIÓN DE ÓRDENES

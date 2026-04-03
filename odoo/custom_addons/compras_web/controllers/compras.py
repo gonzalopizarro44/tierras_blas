@@ -11,17 +11,29 @@ Rutas:
 - GET /compras/nueva: Formulario para nueva compra (HTTP)
 - POST /compras/crear_proveedor: Crear proveedor rápidamente (JSON-RPC)
 - POST /compras/crear: Crear nueva orden de compra (JSON-RPC)
-- POST /compras/confirmar: Confirmar compra e incrementar stock (JSON-RPC)
+- POST /compras/confirmar: Confirmar compra y crear pickings (JSON-RPC)
+- POST /compras/validar: Validar recepciones e incrementar stock (JSON-RPC)
 - POST /compras/cancelar: Cancelar compra (JSON-RPC)
 
 LÓGICA DE NEGOCIO:
 → Toda la lógica está en models/compras_service.py
 → Controllers solo parsean requests y llaman al servicio
 
-FLUJO DE STOCK (COMPRAS):
+FLUJO DE ESTADOS (3 PASOS):
 1. Usuario crea orden → purchase.order en estado DRAFT (sin stock)
-2. Usuario confirma → service.confirm_purchase_order() → button_confirm()
-3. Stock se INCREMENTA en ubicación WH/Stock automáticamente
+   POST /compras/crear
+
+2. Usuario confirma → compras_service.confirmar_orden_compra()
+   - Estado: DRAFT → PURCHASE
+   - Crea automáticamente stock.picking (recepciones)
+   - NO valida pickings aún (NO incrementa stock)
+   POST /compras/confirmar
+
+3. Usuario valida → compras_service.validar_recepcion_compra()
+   - Valida todos los pickings asociados
+   - Establece cantidades recibidas
+   - Stock se INCREMENTA automáticamente en inventario
+   POST /compras/validar
 
 ==============================================================================
 """
@@ -233,14 +245,17 @@ class ComprasController(http.Controller):
     @http.route('/compras/confirmar', type='jsonrpc', auth='user', website=True, methods=['POST'])
     def confirmar_compra(self, orden_id):
         """
-        Confirma una orden de compra e INCREMENTA STOCK.
+        Confirma una orden de compra y crea las recepciones (pickings).
         
         Usa: compras_service.confirmar_orden_compra()
         
         PROCESO:
         1. Ejecuta button_confirm() de Odoo (DRAFT → PURCHASE)
-        2. Incrementa stock.quant en ubicación WH/Stock
-        3. Evita confirmaciones duplicadas
+        2. Crea automáticamente stock.picking (recepciones)
+        3. NO valida los pickings aún (ver /compras/validar para eso)
+        4. Stock NO se incrementa en este punto
+        
+        RESULTADO: Orden en estado "pendiente" con pickings listos para validar
         
         Parámetros (JSON-RPC):
         - orden_id: ID de purchase.order
@@ -248,7 +263,9 @@ class ComprasController(http.Controller):
         Returns:
             dict: {
                 'success': bool,
-                'message': str
+                'message': str,
+                'pickings_creados': int,
+                'order_name': str
             }
         """
         # ── Validar permisos ──
@@ -292,5 +309,52 @@ class ComprasController(http.Controller):
         # ── Llamar al servicio ──
         compras_service = self._obtener_servicio_compras()
         resultado = compras_service.cancelar_orden_compra(orden_id)
+
+        return resultado
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # RUTA POST: /compras/validar - Validar recepción e incrementar stock
+    # ═════════════════════════════════════════════════════════════════════════
+
+    @http.route('/compras/validar', type='jsonrpc', auth='user', website=True, methods=['POST'])
+    def validar_recepcion(self, orden_id):
+        """
+        Valida las recepciones (pickings) de una orden confirmada e incrementa stock.
+        
+        Usa: compras_service.validar_recepcion_compra()
+        
+        PROCESO:
+        1. Valida que la orden esté en estado PURCHASE
+        2. Para cada picking asociado:
+           - Confirma si está en draft
+           - Asigna stock disponible
+           - Establece cantidades recibidas (qty_done)
+           - Valida el picking
+        3. Los movimientos de stock se crean automáticamente
+        4. El stock.quant en inventario se incrementa
+        
+        GARANTÍAS:
+        - Manejo robusto de errores
+        - No usa wizards (sin tracking por lotes/series)
+        - Integración directa con inventario_web
+        
+        Parámetros (JSON-RPC):
+        - orden_id: ID de purchase.order
+        
+        Returns:
+            dict: {
+                'success': bool,
+                'message': str,
+                'pickings_validados': int,
+                'order_name': str
+            }
+        """
+        # ── Validar permisos ──
+        if not self._validar_permisos():
+            return {'success': False, 'message': 'No tiene permisos.'}
+
+        # ── Llamar al servicio ──
+        compras_service = self._obtener_servicio_compras()
+        resultado = compras_service.validar_recepcion_compra(orden_id)
 
         return resultado

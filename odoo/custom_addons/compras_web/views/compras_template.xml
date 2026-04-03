@@ -340,6 +340,24 @@
                                                             ✕ Cancelar
                                                         </button>
                                                     </t>
+                                                    <t t-elif="compra.state == 'purchase'">
+                                                        <button type="button" class="btn compras-btn-sm compras-btn-success"
+                                                                onclick="validarRecepcion(this)" t-att-data-order-id="compra.id">
+                                                            ✓ Validar
+                                                        </button>
+                                                        <button type="button" class="btn compras-btn-sm compras-btn-danger"
+                                                                onclick="cancelarCompra(this)" t-att-data-order-id="compra.id">
+                                                            ✕ Cancelar
+                                                        </button>
+                                                    </t>
+                                                    <t t-elif="compra.state == 'done'">
+                                                        <button type="button" class="btn compras-btn-sm btn-secondary" disabled="disabled">
+                                                            ✓ Completado
+                                                        </button>
+                                                    </t>
+                                                    <t t-elif="compra.state == 'cancel'">
+                                                        <span style="font-size: 0.8rem; color: #999;">Cancelado</span>
+                                                    </t>
                                                 </td>
                                             </tr>
                                         </t>
@@ -411,6 +429,43 @@
                     btn.innerHTML = '⏳ Procesando...';
 
                     fetch('/compras/cancelar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            method: "call",
+                            params: { orden_id: parseInt(ordenId) }
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.result &amp;&amp; data.result.success) {
+                            alert(data.result.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (data.result ? data.result.message : 'Unknown'));
+                            btn.disabled = false;
+                            btn.innerText = txtBtn;
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Error de conexión');
+                        btn.disabled = false;
+                        btn.innerText = txtBtn;
+                    });
+                }
+
+                function validarRecepcion(btn) {
+                    const ordenId = btn.getAttribute('data-order-id');
+                    const txtBtn = btn.innerText;
+
+                    if (!confirm('¿Validar esta recepción? El stock se incrementará automáticamente.')) return;
+
+                    btn.disabled = true;
+                    btn.innerHTML = '⏳ Procesando...';
+
+                    fetch('/compras/validar', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

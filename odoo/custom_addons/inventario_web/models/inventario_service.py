@@ -260,6 +260,16 @@ class InventarioService(models.AbstractModel):
                 # Esperamos un booleano (True/False)
                 producto.write({'active': bool(value)})
 
+            elif field == 'x_costo_usd':
+                try:
+                    valor = float(value)
+                    if valor < 0:
+                        return {'success': False, 'message': 'El costo USD debe ser positivo.'}
+                    # Escribir en el template del producto
+                    producto.product_tmpl_id.write({'x_costo_usd': valor})
+                except (ValueError, TypeError):
+                    return {'success': False, 'message': 'Costo USD no válido.'}
+
             else:
                 return {'success': False, 'message': 'Campo no soportado para edición.'}
 

@@ -322,6 +322,7 @@
                                             <th>Categoría</th>
                                             <th>Stock</th>
                                             <th>Precio Costo</th>
+                                            <th>Costo USD</th>
                                             <th>Precio Sale</th>
                                             <th>Impuestos</th>
                                             <th>Estado</th>
@@ -404,6 +405,15 @@
                                                     t-att-data-id="producto.id"
                                                     t-att-data-value="producto.standard_price">
                                                     $ <t t-esc="'%.2f' % producto.standard_price"/>
+                                                </td>
+
+                                                <!-- Costo USD -->
+                                                <td class="editable-cell" 
+                                                    data-field="x_costo_usd" 
+                                                    data-field-label="Costo USD"
+                                                    t-att-data-id="producto.id"
+                                                    t-att-data-value="producto.x_costo_usd">
+                                                    USD <t t-esc="'%.2f' % producto.x_costo_usd"/>
                                                 </td>
 
                                                 <!-- Precio venta -->
@@ -609,6 +619,13 @@
                             `;
                             hint.innerHTML = "⚠️ <strong>Ten en cuenta:</strong> Al modificar el precio de costo, se recomienda revisar luego el precio de venta para mantener tus márgenes.";
                             hint.classList.remove('d-none');
+                        } else if (currentField === 'x_costo_usd') {
+                            container.innerHTML = `
+                                <label class="form-label small fw-bold">Nuevo Costo USD</label>
+                                <input type="number" id="editInput" class="form-control" value="${currentValue}" step="0.01" min="0">
+                            `;
+                            hint.innerHTML = "💵 <strong>Información:</strong> Este es el costo en USD como referencia de la última compra realizada.";
+                            hint.classList.remove('d-none');
                         } else if (currentField === 'list_price') {
                             container.innerHTML = `
                                 <label class="form-label small fw-bold">Nuevo Precio de Venta</label>
@@ -639,7 +656,7 @@
                         }
 
                         // Validación básica
-                        if (['name', 'qty_available', 'standard_price', 'list_price'].includes(currentField) && !newValue && newValue !== 0) {
+                        if (['name', 'qty_available', 'standard_price', 'x_costo_usd', 'list_price'].includes(currentField) && !newValue && newValue !== 0) {
                             alert('Este campo es obligatorio.');
                             return;
                         }
