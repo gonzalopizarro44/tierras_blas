@@ -341,14 +341,23 @@
                                                         </button>
                                                     </t>
                                                     <t t-elif="compra.state == 'purchase'">
-                                                        <button type="button" class="btn compras-btn-sm compras-btn-success"
-                                                                onclick="validarRecepcion(this)" t-att-data-order-id="compra.id">
-                                                            ✓ Validar
-                                                        </button>
-                                                        <button type="button" class="btn compras-btn-sm compras-btn-danger"
-                                                                onclick="cancelarCompra(this)" t-att-data-order-id="compra.id">
-                                                            ✕ Cancelar
-                                                        </button>
+                                                        <!-- Solo mostrar botón si hay recepciones pendientes (assigned/confirmed) -->
+                                                        <t t-if="compra.id in order_ids_con_pendientes">
+                                                            <button type="button" class="btn compras-btn-sm compras-btn-success"
+                                                                    onclick="validarRecepcion(this)" t-att-data-order-id="compra.id">
+                                                                ✓ Validar
+                                                            </button>
+                                                            <button type="button" class="btn compras-btn-sm compras-btn-danger"
+                                                                    onclick="cancelarCompra(this)" t-att-data-order-id="compra.id">
+                                                                ✕ Cancelar
+                                                            </button>
+                                                        </t>
+                                                        <!-- Si NO hay recepciones pendientes pero está en 'purchase' -->
+                                                        <t t-else="">
+                                                            <button type="button" class="btn compras-btn-sm btn-secondary" disabled="disabled">
+                                                                ✓ Completado
+                                                            </button>
+                                                        </t>
                                                     </t>
                                                     <t t-elif="compra.state == 'done'">
                                                         <button type="button" class="btn compras-btn-sm btn-secondary" disabled="disabled">

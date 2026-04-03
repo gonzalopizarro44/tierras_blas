@@ -104,6 +104,22 @@ class ComprasController(http.Controller):
             order='date_order desc, id desc'
         )
 
+        # ── ENRIQUECIMIENTO: Calcular recepciones pendientes en BATCH (sin N+1) ──
+        # En lugar de iterar y hacer queries individuales, hacemos una búsqueda única
+        # que obtiene TODOS los order_ids que tienen pickings pendientes
+        order_ids = [c.id for c in compras]
+        
+        if order_ids:
+            # Búsqueda ÚNICA en batch: obtiene pickings pendientes para TODAS las órdenes
+            pickings_pendientes = request.env['stock.picking'].sudo().search([
+                ('purchase_id', 'in', order_ids),
+                ('state', 'in', ['assigned', 'confirmed']),
+            ])
+            # Crear un set de order_ids que tienen pickings pendientes (búsqueda O(1))
+            order_ids_con_pendientes = set(pickings_pendientes.mapped('purchase_id.id'))
+        else:
+            order_ids_con_pendientes = set()
+
         # ── Obtener datos para la UI ──
         categorias = request.env['product.category'].sudo().search(
             [],
@@ -118,6 +134,7 @@ class ComprasController(http.Controller):
         # ── Contexto para la vista ──
         ctx = {
             'compras': compras,
+            'order_ids_con_pendientes': order_ids_con_pendientes,
             'categorias': categorias,
             'proveedores': proveedores,
             'filtros': kwargs,  # Repoblar filtros en la UI

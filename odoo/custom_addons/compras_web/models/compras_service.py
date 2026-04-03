@@ -66,6 +66,43 @@ class ComprasService(models.AbstractModel):
         _logger.info(contexto + mensaje)
 
     # ═════════════════════════════════════════════════════════════════════════
+    # MÉTODO AUXILIAR: Validación de recepciones pendientes
+    # ═════════════════════════════════════════════════════════════════════════
+
+    def tiene_recepciones_pendientes(self, orden_id):
+        """
+        Verifica si una orden de compra tiene recepciones (pickings) pendientes de validar.
+        
+        SINCRONIZACIÓN CON ODOO:
+        - Busca TODAS las recepciones asociadas a la orden
+        - Retorna True si al menos UNA está en estado 'assigned' o 'confirmed'
+        - Retorna False si todas están en 'done' o 'cancel'
+        
+        RENDIMIENTO:
+        - Usa search() sin mapped() para evitar N+1 queries
+        - Límite de 1 picking para cortocircuito rápido
+        
+        Args:
+            orden_id (int): ID de la purchase.order
+        
+        Returns:
+            bool: True si hay al menos una recepción pendiente, False si no
+        """
+        try:
+            # Buscar un picking en estado 'assigned' o 'confirmed'
+            # Si encuentra aunque sea uno, retorna True (cortocircuito)
+            picking_pendiente = self.env['stock.picking'].sudo().search([
+                ('purchase_id', '=', int(orden_id)),
+                ('state', 'in', ['assigned', 'confirmed']),
+            ], limit=1)
+            
+            return bool(picking_pendiente)
+        
+        except (ValueError, TypeError):
+            # Si el orden_id no es válido, retorna False
+            return False
+
+    # ═════════════════════════════════════════════════════════════════════════
     # SECCIÓN 1: FILTROS AVANZADOS
     # ═════════════════════════════════════════════════════════════════════════
 
