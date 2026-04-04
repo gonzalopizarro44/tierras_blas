@@ -24,6 +24,9 @@ Uso:
 
 from odoo import models, api
 from datetime import datetime, timedelta
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class PanelService(models.AbstractModel):
@@ -112,7 +115,6 @@ class PanelService(models.AbstractModel):
         Returns:
             dict: Diccionario con todas las métricas calculadas
         """
-        Quant = self.env['stock.quant'].sudo()
         SaleOrder = self.env['sale.order'].sudo()
         PurchaseOrder = self.env['purchase.order'].sudo()
         Product = self.env['product.product'].sudo()
@@ -131,11 +133,35 @@ class PanelService(models.AbstractModel):
         total_compras = len(compras)
         gastos = sum(compras.mapped('amount_total'))
         
-        # INVENTARIO
+        # INVENTARIO - Usar stock.quant para cálculos precisos
         productos_activos = Product.search([('active', '=', True)])
         total_productos = len(productos_activos)
-        productos_sin_stock = Quant.search_count([('quantity', '=', 0)])
-        productos_bajo_stock = Quant.search_count([('quantity', '>', 0), ('quantity', '<', 10)])
+        
+        # Obtener mapeo de stock por producto
+        StockQuant = self.env['stock.quant'].sudo()
+        quants = StockQuant.search([])
+        
+        producto_stock_map = {}
+        for quant in quants:
+            prod_id = quant.product_id.id
+            if prod_id not in producto_stock_map:
+                producto_stock_map[prod_id] = 0
+            producto_stock_map[prod_id] += quant.quantity
+        
+        # Contar productos sin stock (stock <= 0)
+        productos_sin_stock = 0
+        productos_bajo_stock = 0
+        for prod_id, stock in producto_stock_map.items():
+            if stock <= 0:
+                productos_sin_stock += 1
+            elif stock > 0 and stock < 10:
+                productos_bajo_stock += 1
+        
+        # También contar productos que no tienen registros en quant
+        productos_con_quant = set(producto_stock_map.keys())
+        for prod in productos_activos:
+            if prod.id not in productos_con_quant and prod.type == 'product':
+                productos_sin_stock += 1
         
         return {
             'total_ventas': total_ventas,
@@ -349,14 +375,33 @@ class PanelService(models.AbstractModel):
     @api.model
     def _generar_alerta_stock_cero(self):
         """Genera alerta si hay productos sin stock."""
-        Quant = self.env['stock.quant'].sudo()
-        sin_stock = Quant.search([('quantity', '=', 0)])
+        Product = self.env['product.product'].sudo()
+        StockQuant = self.env['stock.quant'].sudo()
         
-        if sin_stock:
+        # Mapear producto -> stock total
+        quants = StockQuant.search([])
+        producto_stock_map = {}
+        for quant in quants:
+            prod_id = quant.product_id.id
+            if prod_id not in producto_stock_map:
+                producto_stock_map[prod_id] = 0
+            producto_stock_map[prod_id] += quant.quantity
+        
+        # Contar productos sin stock
+        sin_stock_count = sum(1 for stock in producto_stock_map.values() if stock <= 0)
+        
+        # Contar productos activos que no tienen registros (también sin stock)
+        productos_activos = Product.search([('active', '=', True)])
+        productos_con_quant = set(producto_stock_map.keys())
+        for prod in productos_activos:
+            if prod.id not in productos_con_quant and prod.type == 'product':
+                sin_stock_count += 1
+        
+        if sin_stock_count > 0:
             return [{
                 'tipo': 'warning',
                 'titulo': 'Productos sin Stock',
-                'mensaje': f'{len(sin_stock)} producto(s) con cantidad = 0',
+                'mensaje': f'{sin_stock_count} producto(s) con stock = 0',
                 'icono': '📦',
             }]
         return []
@@ -364,14 +409,25 @@ class PanelService(models.AbstractModel):
     @api.model
     def _generar_alerta_stock_bajo(self):
         """Genera alerta si hay productos con stock bajo."""
-        Quant = self.env['stock.quant'].sudo()
-        bajo_stock = Quant.search([('quantity', '>', 0), ('quantity', '<', 10)])
+        StockQuant = self.env['stock.quant'].sudo()
         
-        if bajo_stock:
+        # Mapear producto -> stock total
+        quants = StockQuant.search([])
+        producto_stock_map = {}
+        for quant in quants:
+            prod_id = quant.product_id.id
+            if prod_id not in producto_stock_map:
+                producto_stock_map[prod_id] = 0
+            producto_stock_map[prod_id] += quant.quantity
+        
+        # Contar productos con stock bajo (0 < stock < 10)
+        bajo_stock_count = sum(1 for stock in producto_stock_map.values() if stock > 0 and stock < 10)
+        
+        if bajo_stock_count > 0:
             return [{
                 'tipo': 'info',
                 'titulo': 'Stock Bajo',
-                'mensaje': f'{len(bajo_stock)} producto(s) con cantidad < 10',
+                'mensaje': f'{bajo_stock_count} producto(s) con cantidad < 10',
                 'icono': '⚠️',
             }]
         return []
@@ -512,34 +568,77 @@ class PanelService(models.AbstractModel):
     @api.model
     def obtener_productos_sin_stock(self, page=1, limit=10):
         """
-        Obtiene lista paginada de productos sin stock (cantidad = 0).
+        Obtiene lista paginada de productos sin stock.
+        
+        Busca en stock.quant (tabla de inventario real) para encontrar todos los productos
+        que tienen stock total = 0 en todas sus ubicaciones o que nunca han tenido inventario.
+        
+        MEJORAS ODOO 19:
+        - Usa stock.quant como fuente de verdad (no qty_available que puede estar cacheada)
+        - Agrega categoría del producto para mejor contexto
+        - Considera ambos: productos con stock=0 y productos sin registros en stock.quant
+        - Ordenado por nombre para fácil búsqueda
         
         Args:
             page (int): Número de página (1-indexado)
             limit (int): Cantidad de registros por página
         
         Returns:
-            dict: {total: int, items: list, page: int, limit: int}
+            dict: {total: int, items: list, page: int, limit: int, total_pages: int}
         """
-        Quant = self.env['stock.quant'].sudo()
+        Product = self.env['product.product'].sudo()
+        StockQuant = self.env['stock.quant'].sudo()
         
-        # Buscar productos sin stock
-        sin_stock = Quant.search([('quantity', '=', 0)])
+        # PASO 1: Mapear stock total por producto desde stock.quant
+        quants = StockQuant.search([('product_id.active', '=', True)])
+        
+        producto_stock_map = {}
+        for quant in quants:
+            prod_id = quant.product_id.id
+            if prod_id not in producto_stock_map:
+                producto_stock_map[prod_id] = {
+                    'producto': quant.product_id,
+                    'stock_total': 0
+                }
+            producto_stock_map[prod_id]['stock_total'] += quant.quantity
+        
+        # PASO 2: Filtrar productos sin stock (stock <= 0)
+        sin_stock_ids = set()
+        
+        # Productos en stock.quant con stock_total <= 0
+        for prod_id, data in producto_stock_map.items():
+            if data['stock_total'] <= 0:
+                sin_stock_ids.add(prod_id)
+        
+        # Productos activos que NO tienen registros en stock.quant (nunca inventariados)
+        productos_activos = Product.search([('active', '=', True), ('type', '=', 'product')])
+        productos_con_quant = set(producto_stock_map.keys())
+        for prod in productos_activos:
+            if prod.id not in productos_con_quant:
+                sin_stock_ids.add(prod.id)
+        
+        # PASO 3: Convertir a lista y ordenar alfabéticamente
+        sin_stock = Product.browse(list(sin_stock_ids))
+        sin_stock = sin_stock.sorted(key=lambda p: p.name)
+        
         total = len(sin_stock)
         
-        # Calcular offset para pagination
+        _logger.info(f"[PANEL] sin_stock: Encontrados {total} productos sin stock (página {page}/{(total + limit - 1) // limit})")
+        
+        # PASO 4: Paginar
         offset = (page - 1) * limit
         items_paginados = sin_stock[offset:offset + limit]
         
-        # Construir respuesta
+        # PASO 5: Construir respuesta con datos enriquecidos
         items = []
-        for quant in items_paginados:
-            prod = quant.product_id
+        for prod in items_paginados:
+            stock_total = producto_stock_map.get(prod.id, {}).get('stock_total', 0)
             items.append({
                 'id': prod.id,
                 'nombre': prod.name,
-                'stock': quant.quantity,
+                'stock': int(stock_total) if stock_total else 0,
                 'sku': prod.default_code or 'N/A',
+                'categoria': prod.categ_id.name or 'Sin categoría',
             })
         
         return {
@@ -553,37 +652,76 @@ class PanelService(models.AbstractModel):
     @api.model
     def obtener_productos_bajo_stock(self, page=1, limit=10):
         """
-        Obtiene lista paginada de productos con stock bajo (0 < cantidad < 10).
+        Obtiene lista paginada de productos con stock bajo (0 < stock < 10).
+        
+        Busca en stock.quant (tabla de inventario real) para encontrar todos los productos
+        cuya suma de stock en todas ubicaciones esté entre 1 y 9.
+        
+        MEJORAS ODOO 19:
+        - Usa stock.quant como fuente de verdad (no qty_available que puede estar cacheada)
+        - Agrega categoría del producto para mejor contexto
+        - Ordena por stock disponible (ASC) para priorizar productos más críticos
+        - Incluye información de ubicación principal
         
         Args:
             page (int): Número de página (1-indexado)
             limit (int): Cantidad de registros por página
         
         Returns:
-            dict: {total: int, items: list, page: int, limit: int}
+            dict: {total: int, items: list, page: int, limit: int, total_pages: int}
         """
-        Quant = self.env['stock.quant'].sudo()
+        Product = self.env['product.product'].sudo()
+        StockQuant = self.env['stock.quant'].sudo()
         
-        # Buscar productos con stock bajo
-        bajo_stock = Quant.search(
-            [('quantity', '>', 0), ('quantity', '<', 10)],
-            order='quantity ASC'
-        )
-        total = len(bajo_stock)
+        # PASO 1: Mapear stock total por producto desde stock.quant
+        # stock.quant es la única fuente de verdad para inventario en Odoo
+        quants = StockQuant.search([('product_id.active', '=', True)])
         
-        # Calcular offset para pagination
+        producto_stock_map = {}
+        for quant in quants:
+            prod_id = quant.product_id.id
+            if prod_id not in producto_stock_map:
+                producto_stock_map[prod_id] = {
+                    'producto': quant.product_id,
+                    'stock_total': 0,
+                    'ubicacion': quant.location_id.name if quant.location_id else 'N/A'
+                }
+            producto_stock_map[prod_id]['stock_total'] += quant.quantity
+        
+        # PASO 2: Filtrar productos con stock bajo (0 < stock < 10)
+        bajo_stock_datos = []
+        for prod_id, data in producto_stock_map.items():
+            stock = data['stock_total']
+            if 0 < stock < 10:  # Stock bajo según regla de negocio
+                bajo_stock_datos.append({
+                    'prod_id': prod_id,
+                    'stock_total': stock,
+                    'data': data
+                })
+        
+        # PASO 3: Ordenar por stock disponible (ASC) para detectar críticos primero
+        bajo_stock_datos.sort(key=lambda x: x['stock_total'])
+        total = len(bajo_stock_datos)
+        
+        _logger.info(f"[PANEL] bajo_stock: Encontrados {total} productos con 0<stock<10 (página {page}/{(total + limit - 1) // limit})")
+        
+        # PASO 4: Paginar
         offset = (page - 1) * limit
-        items_paginados = bajo_stock[offset:offset + limit]
+        items_paginados = bajo_stock_datos[offset:offset + limit]
         
-        # Construir respuesta
+        # PASO 5: Construir respuesta con datos enriquecidos
         items = []
-        for quant in items_paginados:
-            prod = quant.product_id
+        for item_data in items_paginados:
+            prod = item_data['data']['producto']
+            stock_total = item_data['stock_total']
+            
             items.append({
                 'id': prod.id,
                 'nombre': prod.name,
-                'stock': quant.quantity,
+                'stock': int(stock_total),
                 'sku': prod.default_code or 'N/A',
+                'categoria': prod.categ_id.name or 'Sin categoría',
+                'ubicacion': item_data['data']['ubicacion'],
             })
         
         return {

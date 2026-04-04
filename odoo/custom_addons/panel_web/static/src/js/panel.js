@@ -51,13 +51,13 @@ publicWidget.registry.PanelWeb = publicWidget.Widget.extend({
             'sin-stock': {
                 title: '❌ Productos Sin Stock',
                 endpoint: '/panel/api/productos-sin-stock',
-                columns: ['Nombre', 'Stock', 'SKU'],
+                columns: ['Nombre', 'Stock', 'SKU', 'Categoría'],
                 renderFn: 'renderProductosSinStock'
             },
             'bajo-stock': {
-                title: '⚠️ Productos con Stock Bajo',
+                title: '⚠️ Productos con Stock Bajo (<10)',
                 endpoint: '/panel/api/productos-bajo-stock',
-                columns: ['Nombre', 'Stock', 'SKU'],
+                columns: ['Nombre', 'Stock Disponible', 'SKU', 'Categoría', 'Ubicación'],
                 renderFn: 'renderProductosBajoStock'
             },
             'total-ventas': {
@@ -369,10 +369,33 @@ publicWidget.registry.PanelWeb = publicWidget.Widget.extend({
     _renderItemPorMetrica: function(item, metricKey) {
         let html = '<tr>';
         
-        if (metricKey === 'sin-stock' || metricKey === 'bajo-stock') {
-            html += `<td>${item.nombre || '-'}</td>`;
-            html += `<td><strong>${item.stock || '0'}</strong></td>`;
+        if (metricKey === 'sin-stock') {
+            // Tabla de productos sin stock: Nombre, Stock, SKU, Categoría
+            html += `<td><strong>${item.nombre || '-'}</strong></td>`;
+            html += `<td><span style="color: #dc3545; font-weight: bold;">${item.stock || '0'}</span></td>`;
             html += `<td>${item.sku || '-'}</td>`;
+            if (item.categoria) {
+                html += `<td><small class="text-muted">${item.categoria}</small></td>`;
+            }
+        } else if (metricKey === 'bajo-stock') {
+            // Tabla de stock bajo: Nombre, Stock (con color), SKU, Categoría, Ubicación
+            // Color del stock: más rojo cuanto más bajo (urgencia)
+            let stockColor = '#ffc107'; // Amarillo por defecto
+            if (item.stock <= 2) {
+                stockColor = '#dc3545'; // Rojo si está muy bajo (1-2)
+            } else if (item.stock <= 5) {
+                stockColor = '#ff6b6b'; // Rojo más claro si está bajo (3-5)
+            }
+            
+            html += `<td><strong>${item.nombre || '-'}</strong></td>`;
+            html += `<td><span style="color: ${stockColor}; font-weight: bold; font-size: 1.1em;">${item.stock || '0'}</span></td>`;
+            html += `<td>${item.sku || '-'}</td>`;
+            if (item.categoria) {
+                html += `<td><small class="text-muted">${item.categoria}</small></td>`;
+            }
+            if (item.ubicacion && item.ubicacion !== 'N/A') {
+                html += `<td><small style="color: #666;">${item.ubicacion}</small></td>`;
+            }
         } else if (['total-ventas', 'ingresos', 'ganancia-neta'].includes(metricKey)) {
             const monto = parseFloat(item.monto || 0);
             const clienteDisplay = item.dni ? `${item.cliente} - ${item.dni}` : item.cliente;
