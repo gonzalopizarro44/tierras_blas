@@ -6,75 +6,78 @@
 
             <!-- Los estilos han sido movidos a panel_web/static/src/css/panel.css -->
 
-            <div class="container-liquid pt-4">
+            <div class="panel-page">
+                <div class="container-lg">
 
-                <!-- HEADER -->
-                <div class="panel-header">
-                    <h1>Panel Administrativo</h1>
-                    <p>Dashboard ejecutivo del negocio en tiempo real</p>
-                </div>
-
-                <!-- FILTROS -->
-                <div class="filter-section mx-4">
-                    <form method="GET" action="/panel" class="row g-3">
-
-                        <div class="col-md-3">
-                            <label class="filter-label">Desde</label>
-                            <input type="date" name="fecha_desde" class="form-control" t-att-value="fecha_desde"/>
+                    <!-- HEADER -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1 class="panel-title">Panel Administrativo</h1>
+                            <p class="panel-subtitle">Dashboard ejecutivo del negocio en tiempo real</p>
                         </div>
+                    </div>
 
-                        <div class="col-md-3">
-                            <label class="filter-label">Hasta</label>
-                            <input type="date" name="fecha_hasta" class="form-control" t-att-value="fecha_hasta"/>
-                        </div>
+                    <!-- FILTROS -->
+                    <div class="panel-card mb-4">
+                        <form method="GET" action="/panel" class="row g-3">
 
-                        <div class="col-md-3">
-                            <label class="filter-label">Categoría</label>
-                            <select name="categoria" class="form-select">
-                                <option value="">-- Todas --</option>
-                                <t t-foreach="categorias" t-as="cat">
-                                    <option t-att-value="cat.id" t-att-selected="str(cat.id) == categoria_id">
-                                        <t t-esc="cat.name"/>
-                                    </option>
-                                </t>
-                            </select>
-                        </div>
+                            <div class="col-md-3">
+                                <label class="filter-label">Desde</label>
+                                <input type="date" name="fecha_desde" class="form-control" t-att-value="fecha_desde"/>
+                            </div>
 
-                        <div class="col-md-3 d-flex align-items-end gap-2">
-                            <button type="submit" class="btn btn-primary w-100">🔍 Filtrar</button>
-                            <a href="/panel" class="btn btn-outline-secondary">✕ Limpiar</a>
-                        </div>
+                            <div class="col-md-3">
+                                <label class="filter-label">Hasta</label>
+                                <input type="date" name="fecha_hasta" class="form-control" t-att-value="fecha_hasta"/>
+                            </div>
 
-                    </form>
-                </div>
+                            <div class="col-md-3">
+                                <label class="filter-label">Categoría</label>
+                                <select name="categoria" class="form-select">
+                                    <option value="">-- Todas --</option>
+                                    <t t-foreach="categorias" t-as="cat">
+                                        <option t-att-value="cat.id" t-att-selected="str(cat.id) == categoria_id">
+                                            <t t-esc="cat.name"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
 
-                <!-- TABS -->
-                <div class="mx-4">
-                    <ul class="nav nav-tabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="metricas-tab" data-bs-toggle="tab" data-bs-target="#metricas" type="button" role="tab">
-                                📈 Métricas
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="indicadores-tab" data-bs-toggle="tab" data-bs-target="#indicadores" type="button" role="tab">
-                                📊 Indicadores
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="alertas-tab" data-bs-toggle="tab" data-bs-target="#alertas" type="button" role="tab">
-                                🚨 Alertas <span class="badge bg-danger ms-2" t-if="alertas" t-out="len(alertas)"/>
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="graficos-tab" data-bs-toggle="tab" data-bs-target="#graficos" type="button" role="tab">
-                                📉 Gráficos
-                            </button>
-                        </li>
-                    </ul>
+                            <div class="col-md-3 d-flex align-items-end gap-2">
+                                <button type="submit" class="btn btn-primary w-100">🔍 Filtrar</button>
+                                <a href="/panel" class="btn btn-outline-secondary">✕ Limpiar</a>
+                            </div>
 
-                    <!-- TAB CONTENT -->
-                    <div class="tab-content mt-4">
+                        </form>
+                    </div>
+
+                    <!-- TABS -->
+                    <div>
+                        <ul class="nav nav-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="metricas-tab" data-bs-toggle="tab" data-bs-target="#metricas" type="button" role="tab">
+                                    📈 Métricas
+                                </button>
+                            </li>
+                            <!-- <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="indicadores-tab" data-bs-toggle="tab" data-bs-target="#indicadores" type="button" role="tab">
+                                    📊 Indicadores
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="alertas-tab" data-bs-toggle="tab" data-bs-target="#alertas" type="button" role="tab">
+                                    🚨 Alertas <span class="badge bg-danger ms-2" t-if="alertas" t-out="len(alertas)"/>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="graficos-tab" data-bs-toggle="tab" data-bs-target="#graficos" type="button" role="tab">
+                                    📉 Gráficos
+                                </button>
+                            </li> -->
+                        </ul>
+
+                        <!-- TAB CONTENT -->
+                        <div class="tab-content mt-4">
 
                         <!-- TAB 1: MÉTRICAS -->
                         <div class="tab-pane fade show active" id="metricas" role="tabpanel">
@@ -180,8 +183,8 @@
 
                         </div>
 
-                        <!-- TAB 2: INDICADORES -->
-                        <div class="tab-pane fade" id="indicadores" role="tabpanel">
+                        <!-- TAB 2: INDICADORES - COMENTADO -->
+                        <!-- <div class="tab-pane fade" id="indicadores" role="tabpanel">
 
                             <div class="row g-3 mb-4">
 
@@ -214,7 +217,6 @@
 
                             </div>
 
-                            <!-- TOP 5 PRODUCTOS -->
                             <div class="panel-card">
                                 <h3 class="panel-card-title">🏆 Productos Más Vendidos</h3>
                                 <div class="panel-card-body">
@@ -246,7 +248,6 @@
                                 </div>
                             </div>
 
-                            <!-- TOP 5 CLIENTES -->
                             <div class="panel-card">
                                 <h3 class="panel-card-title">👥 Clientes Principales</h3>
                                 <div class="panel-card-body">
@@ -276,10 +277,10 @@
                                 </div>
                             </div>
 
-                        </div>
+                        </div> -->
 
-                        <!-- TAB 3: ALERTAS -->
-                        <div class="tab-pane fade" id="alertas" role="tabpanel">
+                        <!-- TAB 3: ALERTAS - COMENTADO -->
+                        <!-- <div class="tab-pane fade" id="alertas" role="tabpanel">
 
                             <t t-if="alertas">
                                 <t t-foreach="alertas" t-as="alerta">
@@ -303,10 +304,10 @@
                                 </div>
                             </t>
 
-                        </div>
+                        </div> -->
 
-                        <!-- TAB 4: GRÁFICOS -->
-                        <div class="tab-pane fade" id="graficos" role="tabpanel">
+                        <!-- TAB 4: GRÁFICOS - COMENTADO -->
+                        <!-- <div class="tab-pane fade" id="graficos" role="tabpanel">
 
                             <div class="row">
 
@@ -334,32 +335,34 @@
 
                             </div>
 
+                        </div> -->
+
                         </div>
 
                     </div>
 
                 </div>
 
-            </div>
-
-            <!-- MODAL GENÉRICO DE DETALLES -->
-            <div class="modal fade" id="modalDetalles" tabindex="-1">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="modalTitle">Detalles</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body" id="modalBody">
-                            <div class="modal-loading">
-                                <div class="spinner-border"></div>
+                <!-- MODAL GENÉRICO DE DETALLES - DENTRO DEL PANEL-PAGE -->
+                <div class="modal fade" id="modalDetalles" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalTitle">Detalles</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body" id="modalBody">
+                                <div class="modal-loading">
+                                    <div class="spinner-border"></div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
                             </div>
                         </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        </div>
                     </div>
                 </div>
+
             </div>
 
             <!-- SCRIPTS -->
