@@ -334,8 +334,9 @@
 
                                                 <!-- Acciones -->
                                                 <td>
-                                                    <a t-attf-href="/facturacion/pdf/{{factura.id}}" target="_blank" 
-                                                       class="btn facturacion-btn-sm facturacion-btn-info">
+                                                    <a t-attf-href="/facturacion/pdf/{{factura.id}}" 
+                                                       class="btn facturacion-btn-sm facturacion-btn-info"
+                                                       t-att-download="'Factura_%s.pdf' % (factura.name or str(factura.id)).replace('/', '_')">
                                                         📥 PDF
                                                     </a>
                                                     <t t-if="factura.state == 'draft'">

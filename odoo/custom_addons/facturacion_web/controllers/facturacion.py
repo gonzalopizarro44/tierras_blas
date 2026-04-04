@@ -126,14 +126,42 @@ class FacturacionController(http.Controller):
         # ── Obtener datos necesarios ──
         facturacion_service = self._obtener_servicio_facturacion()
         ordenes_venta = facturacion_service.obtener_ordenes_venta_sin_factura()
-        ordenes_compra = facturacion_service.obtener_ordenes_compra_sin_factura()
+        # Omitimos compras por solicitud del usuario
+        # ordenes_compra = facturacion_service.obtener_ordenes_compra_sin_factura()
+        
+        # Nuevos datos para el formulario manual
+        posiciones_fiscales = facturacion_service.obtener_posiciones_fiscales()
 
         ctx = {
             'ordenes_venta': ordenes_venta,
-            'ordenes_compra': ordenes_compra,
+            'ordenes_compra': [], # Vacío por ahora
+            'posiciones_fiscales': posiciones_fiscales,
         }
 
         return request.render('facturacion_web.nueva_factura_template', ctx)
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # RUTAS JSON-RPC: Detalle de orden y tipos de documento
+    # ═════════════════════════════════════════════════════════════════════════
+
+    @http.route('/facturacion/detalle_orden', type='jsonrpc', auth='user', 
+                 website=True, methods=['POST'])
+    def detalle_orden(self, orden_id):
+        """Obtiene detalles de una orden para pre-llenar el formulario."""
+        if not self._validar_permisos():
+            return {'success': False, 'message': 'No tiene permisos.'}
+        
+        return self._obtener_servicio_facturacion().obtener_detalle_orden_venta(orden_id)
+
+    @http.route('/facturacion/tipos_documento', type='jsonrpc', auth='user', 
+                 website=True, methods=['POST'])
+    def tipos_documento(self, posicion_fiscal_receptor_id):
+        """Determina el tipo de documento según la posición fiscal."""
+        if not self._validar_permisos():
+            return {'success': False, 'message': 'No tiene permisos.'}
+        
+        res = self._obtener_servicio_facturacion().determinar_tipo_documento(posicion_fiscal_receptor_id)
+        return res or {'success': False, 'message': 'No se pudo determinar el tipo de documento'}
 
     # ═════════════════════════════════════════════════════════════════════════
     # RUTA GET: /facturacion/pdf/<int:factura_id> - Descargar PDF
@@ -174,15 +202,18 @@ class FacturacionController(http.Controller):
             # Renderizar PDF
             pdf_content, _ = reporte.render_qweb_pdf([factura_id])
             
-            # Preparar nombre de archivo
-            nombre_archivo = f"{factura.name}.pdf"
+            # Preparar nombre de archivo seguro
+            safe_name = factura.name.replace('/', '_').replace(' ', '_')
+            nombre_archivo = f"{safe_name}.pdf"
             
             return request.make_response(
                 pdf_content,
                 [
                     ('Content-Type', 'application/pdf'),
-                    ('Content-Disposition', 
-                     f'attachment; filename="{nombre_archivo}"'),
+                    ('Content-Disposition', f'attachment; filename="{nombre_archivo}"'),
+                    ('Cache-Control', 'no-cache, no-store, must-revalidate'),
+                    ('Pragma', 'no-cache'),
+                    ('Expires', '0'),
                 ]
             )
         except Exception as e:
@@ -194,24 +225,9 @@ class FacturacionController(http.Controller):
 
     @http.route('/facturacion/crear_factura', type='jsonrpc', auth='user', 
                  website=True, methods=['POST'])
-    def crear_factura(self, orden_id, tipo_orden):
+    def crear_factura(self, **kwargs):
         """
-        Crea una factura a partir de una orden de venta o compra.
-        
-        Usa: facturacion_service.crear_factura_desde_orden()
-        
-        Parámetros (JSON-RPC):
-        - orden_id: ID de sale.order o purchase.order
-        - tipo_orden: 'venta' o 'compra'
-        
-        Returns:
-            dict: {
-                'success': bool,
-                'factura_id': int,
-                'numero_factura': str,
-                'message': str,
-                'url': str
-            }
+        Crea una factura manual con los datos recibidos del formulario.
         """
         # ── Validar permisos ──
         if not self._validar_permisos():
@@ -219,10 +235,9 @@ class FacturacionController(http.Controller):
 
         # ── Llamar al servicio ──
         facturacion_service = self._obtener_servicio_facturacion()
-        resultado = facturacion_service.crear_factura_desde_orden(
-            orden_id, 
-            tipo_orden
-        )
+        
+        # El servicio ahora espera un diccionario con toda la data
+        resultado = facturacion_service.crear_factura_manual(kwargs)
 
         return resultado
 

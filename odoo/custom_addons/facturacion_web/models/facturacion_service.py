@@ -174,59 +174,212 @@ class FacturacionService(models.AbstractModel):
     # ═════════════════════════════════════════════════════════════════════════
 
     @api.model
+    def obtener_detalle_orden_venta(self, orden_id):
+        """
+        Obtiene los detalles completos de una orden de venta para el formulario.
+        """
+        orden = self.env['sale.order'].sudo().browse(orden_id)
+        if not orden.exists():
+            return {'success': False, 'message': 'Orden no encontrada'}
+        
+        partner = orden.partner_id
+        lineas = []
+        for line in orden.order_line:
+            if not line.display_type: # Solo líneas de producto
+                lineas.append({
+                    'product_id': line.product_id.id,
+                    'name': line.product_id.name,
+                    'quantity': line.product_uom_qty,
+                    'price_unit': line.price_unit,
+                    'subtotal': line.price_subtotal,
+                })
+
+        return {
+            'success': True,
+            'orden': {
+                'id': orden.id,
+                'name': orden.name,
+                'amount_total': orden.amount_total,
+            },
+            'partner': {
+                'id': partner.id,
+                'name': partner.name,
+                'vat': partner.vat or '',
+                'afip_type_id': partner.l10n_ar_afip_responsibility_type_id.id,
+            },
+            'lineas': lineas
+        }
+
+    @api.model
+    def obtener_posiciones_fiscales(self):
+        """
+        Obtiene las posiciones fiscales (AFIP Responsibility Types) de Argentina.
+        """
+        posiciones = self.env['l10n_ar.afip.responsibility.type'].sudo().search([])
+        return [{'id': p.id, 'name': p.name, 'code': p.code} for p in posiciones]
+
+    @api.model
+    def determinar_tipo_documento(self, posicion_fiscal_receptor_id):
+        """
+        Determina el tipo de documento (Factura A, B, C) de forma ultra-robusta.
+        """
+        if not posicion_fiscal_receptor_id:
+            return None
+            
+        try:
+            posicion = self.env['l10n_ar.afip.responsibility.type'].sudo().browse(int(posicion_fiscal_receptor_id))
+            if not posicion.exists():
+                return None
+                
+            codigo_afip_receptor = str(posicion.code)
+            
+            # Definir códigos y letras posibles
+            # Factura A: Código 1 o 01, Letra A
+            # Factura B: Código 6 o 06, Letra B
+            if codigo_afip_receptor in ['1', '01']:
+                target_codes = ['1', '01']
+                target_letter = 'A'
+            else:
+                target_codes = ['6', '06']
+                target_letter = 'B'
+            
+            # Intento 1: Por código y país
+            doc_type = self.env['l10n_latam.document.type'].sudo().search([
+                ('code', 'in', target_codes),
+                ('country_id.code', '=', 'AR')
+            ], limit=1)
+            
+            # Intento 2: Por letra (campo específico de l10n_ar)
+            if not doc_type and hasattr(self.env['l10n_latam.document.type'], 'l10n_ar_letter'):
+                doc_type = self.env['l10n_latam.document.type'].sudo().search([
+                    ('l10n_ar_letter', '=', target_letter),
+                    ('country_id.code', '=', 'AR')
+                ], limit=1)
+
+            # Intento 3: Búsqueda por nombre con país
+            if not doc_type:
+                doc_type = self.env['l10n_latam.document.type'].sudo().search([
+                    ('name', 'ilike', f'Factura {target_letter}%'),
+                    ('country_id.code', '=', 'AR')
+                ], limit=1)
+
+            # Intento 4: Por código sin país
+            if not doc_type:
+                doc_type = self.env['l10n_latam.document.type'].sudo().search([
+                    ('code', 'in', target_codes)
+                ], limit=1)
+
+            # Intento 5: Por letra sin país
+            if not doc_type and hasattr(self.env['l10n_latam.document.type'], 'l10n_ar_letter'):
+                doc_type = self.env['l10n_latam.document.type'].sudo().search([
+                    ('l10n_ar_letter', '=', target_letter)
+                ], limit=1)
+
+            if doc_type:
+                return {
+                    'id': doc_type.id,
+                    'name': doc_type.name,
+                    'code': doc_type.code
+                }
+            
+            # Intento desesperado: buscar cualquier cosa que se llame Factura A o B
+            if not doc_type:
+                doc_type = self.env['l10n_latam.document.type'].sudo().search([
+                    ('name', 'ilike', f'Factura {target_letter}%')
+                ], limit=1)
+
+            if doc_type:
+                return {
+                    'id': doc_type.id,
+                    'name': doc_type.name,
+                    'code': doc_type.code
+                }
+            
+            # DIAGNÓSTICO: Si todo falla, vamos a ver qué hay en la base de datos
+            # Buscamos los primeros 5 tipos de documentos argentinos o generales
+            all_types = self.env['l10n_latam.document.type'].sudo().search([], limit=5)
+            names = " | ".join([f"{t.name}[{t.code}]" for t in all_types])
+            
+            return {
+                'id': None,
+                'name': f"ERROR_DIAG: Disp: {names or 'VACÍO'}",
+                'code': 'ERR'
+            }
+        except Exception as e:
+            return {'id': None, 'name': f"EXCEP: {str(e)}", 'code': 'ERR'}
+
+    @api.model
+    def crear_factura_manual(self, data):
+        """
+        Crea una factura account.move manualmente con datos personalizados.
+        
+        Parámetros (data):
+        - orden_id: ID de sale.order
+        - partner_data: {id, name, vat, afip_type_id}
+        - lineas: [{product_id, quantity, price_unit}]
+        - document_type_id: ID de l10n_latam.document.type
+        """
+        try:
+            orden_id = data.get('orden_id')
+            partner_data = data.get('partner_data', {})
+            lineas_data = data.get('lineas', [])
+            document_type_id = data.get('document_type_id')
+
+            orden = self.env['sale.order'].sudo().browse(orden_id)
+            
+            # Preparar valores del movimiento
+            move_vals = {
+                'move_type': 'out_invoice',
+                'partner_id': partner_data.get('id'),
+                'l10n_latam_document_type_id': document_type_id,
+                'invoice_origin': orden.name if orden.exists() else '',
+                'invoice_line_ids': [],
+            }
+            
+            # Agregar líneas de factura
+            for line in lineas_data:
+                move_vals['invoice_line_ids'].append((0, 0, {
+                    'product_id': int(line.get('product_id')),
+                    'quantity': float(line.get('quantity', 0)),
+                    'price_unit': float(line.get('price_unit', 0)),
+                }))
+            
+            # Crear la factura con el contexto de tipo de documento
+            factura = self.env['account.move'].sudo().with_context(
+                default_l10n_latam_document_type_id=document_type_id
+            ).create(move_vals)
+            
+            # Publicar factura
+            factura.action_post()
+            
+            # Vincular con la orden de venta si existe
+            if orden.exists():
+                orden.invoice_ids |= factura
+            
+            return {
+                'success': True,
+                'factura_id': factura.id,
+                'numero_factura': factura.name,
+                'message': f'Factura {factura.name} creada exitosamente',
+                'url': f'/facturacion?id={factura.id}'
+            }
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f'Error al crear factura manual: {str(e)}'
+            }
+
+    @api.model
     def crear_factura_desde_orden(self, orden_id, tipo_orden):
         """
-        Crea una factura a partir de una orden de venta o compra.
-        
-        Parámetros:
-        - orden_id: ID de sale.order o purchase.order
-        - tipo_orden: 'venta' o 'compra'
-        
-        Returns:
-            dict: {
-                'success': bool,
-                'factura_id': int,
-                'numero_factura': str,
-                'message': str,
-                'url': str
-            }
+        Método deprecado o simplificado. Ahora redirige al flujo manual 
+        si es necesario, pero mantenemos la firma por compatibilidad si algo falla.
         """
+        # Por ahora lo dejamos igual para no romper nada, pero la UI usará crear_factura_manual
         try:
             if tipo_orden == 'venta':
                 orden = self.env['sale.order'].sudo().browse(orden_id)
-                if not orden.exists():
-                    return {
-                        'success': False,
-                        'message': 'Orden de venta no encontrada'
-                    }
-                
-                # Crear factura desde orden de venta
-                facturas = orden._create_invoices()
-                if facturas:
-                    factura = facturas[0]
-                    factura.action_post()  # Publicar factura
-                    return {
-                        'success': True,
-                        'factura_id': factura.id,
-                        'numero_factura': factura.name,
-                        'message': f'Factura {factura.name} creada exitosamente',
-                        'url': f'/facturacion?id={factura.id}'
-                    }
-                else:
-                    return {
-                        'success': False,
-                        'message': 'No se pudo crear la factura'
-                    }
-            
-            elif tipo_orden == 'compra':
-                orden = self.env['purchase.order'].sudo().browse(orden_id)
-                if not orden.exists():
-                    return {
-                        'success': False,
-                        'message': 'Orden de compra no encontrada'
-                    }
-                
-                # Crear factura desde orden de compra
                 facturas = orden._create_invoices()
                 if facturas:
                     factura = facturas[0]
@@ -238,23 +391,9 @@ class FacturacionService(models.AbstractModel):
                         'message': f'Factura {factura.name} creada exitosamente',
                         'url': f'/facturacion?id={factura.id}'
                     }
-                else:
-                    return {
-                        'success': False,
-                        'message': 'No se pudo crear la factura'
-                    }
-            
-            else:
-                return {
-                    'success': False,
-                    'message': 'Tipo de orden inválido'
-                }
-        
+            return {'success': False, 'message': 'Use el nuevo flujo manual'}
         except Exception as e:
-            return {
-                'success': False,
-                'message': f'Error al crear factura: {str(e)}'
-            }
+            return {'success': False, 'message': str(e)}
 
     # ═════════════════════════════════════════════════════════════════════════
     # SECCIÓN 5: OBTENCIÓN DE DATOS PARA FORMULARIO

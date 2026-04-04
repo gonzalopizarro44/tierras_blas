@@ -33,11 +33,6 @@
                     padding: 2rem;
                     box-shadow: var(--brand-shadow);
                     margin-bottom: 2rem;
-                    transition: box-shadow 0.3s ease;
-                }
-
-                .nf-card:hover {
-                    box-shadow: 0 4px 6px rgba(0,0,0,.1);
                 }
 
                 .nf-title { 
@@ -45,430 +40,517 @@
                     font-weight: 700; 
                     margin: 0;
                     color: var(--brand-text);
-                    font-family: 'Inter', sans-serif;
                 }
 
                 .nf-section-title {
-                    font-size: 1rem;
+                    font-size: 1.1rem;
                     font-weight: 600;
                     color: var(--brand-primary);
-                    border-bottom: 2px solid var(--brand-border);
-                    padding-bottom: 0.75rem;
-                    margin-bottom: 1rem;
-                }
-
-                .nf-label {
-                    font-weight: 600;
-                    font-size: 0.9rem;
-                    margin-bottom: 0.5rem;
-                    color: var(--brand-text);
-                }
-
-                .nf-warning-box {
-                    background: #fef3c7;
-                    border-left: 4px solid #d97706;
-                    padding: 1rem;
-                    border-radius: 0 var(--brand-radius) var(--brand-radius) 0;
                     margin-bottom: 1.5rem;
-                    color: #78350f;
-                    font-size: 0.95rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
                 }
 
-                .nf-orden-selector {
-                    background: var(--brand-bg);
+                /* STEPS WIZARD */
+                .nf-steps {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 2rem;
+                    position: relative;
+                }
+                .nf-steps::before {
+                    content: '';
+                    position: absolute;
+                    top: 20px;
+                    left: 0;
+                    right: 0;
+                    height: 2px;
+                    background: var(--brand-border);
+                    z-index: 1;
+                }
+                .nf-step {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 50%;
+                    background: white;
+                    border: 2px solid var(--brand-border);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-weight: 700;
+                    z-index: 2;
+                    position: relative;
+                    transition: all 0.3s;
+                    color: var(--brand-text-muted);
+                }
+                .nf-step.active {
+                    border-color: var(--brand-primary);
+                    background: var(--brand-primary);
+                    color: white;
+                    box-shadow: 0 0 0 4px rgba(22,101,52,0.1);
+                }
+                .nf-step.completed {
+                    border-color: var(--brand-primary);
+                    background: var(--brand-light);
+                    color: var(--brand-primary);
+                }
+                .nf-step-content { display: none; }
+                .nf-step-content.active { display: block; animation: fadeIn 0.3s ease; }
+
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: translateY(10px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+
+                /* SELECTOR DE ÓRDENES */
+                .nf-orden-list {
+                    max-height: 400px;
+                    overflow-y: auto;
+                    padding-right: 0.5rem;
+                }
+                .nf-orden-item {
+                    background: white;
                     border: 1px solid var(--brand-border);
                     border-radius: var(--brand-radius);
                     padding: 1rem;
-                    margin-bottom: 1rem;
+                    margin-bottom: 0.75rem;
                     cursor: pointer;
                     transition: all 0.2s;
                 }
-
-                .nf-orden-selector:hover {
+                .nf-orden-item:hover {
                     border-color: var(--brand-primary);
-                    background: linear-gradient(135deg, rgba(22,101,52,0.05) 0%, transparent 100%);
+                    background: var(--brand-bg);
                 }
-
-                .nf-orden-selector.selected {
+                .nf-orden-item.selected {
                     border-color: var(--brand-primary);
                     background: var(--brand-light);
                 }
 
-                .nf-orden-header {
+                /* FORMULARIO RECEPTOR */
+                .nf-form-group { margin-bottom: 1.5rem; }
+                .nf-label {
+                    display: block;
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                    margin-bottom: 0.5rem;
+                    color: var(--brand-text);
+                }
+                .nf-input, .nf-select {
+                    width: 100%;
+                    padding: 0.75rem;
+                    border: 1px solid var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    font-size: 0.95rem;
+                }
+                .nf-input:focus, .nf-select:focus {
+                    outline: none;
+                    border-color: var(--brand-primary);
+                    box-shadow: 0 0 0 3px rgba(22,101,52,0.1);
+                }
+
+                /* TABLA PRODUCTOS */
+                .nf-table { width: 100%; border-collapse: collapse; }
+                .nf-table th {
+                    text-align: left;
+                    padding: 1rem;
+                    font-size: 0.85rem;
+                    text-transform: uppercase;
+                    color: var(--brand-text-muted);
+                    border-bottom: 2px solid var(--brand-border);
+                }
+                .nf-table td { padding: 1rem; border-bottom: 1px solid var(--brand-border); }
+                .nf-qty-input, .nf-price-input {
+                    width: 80px;
+                    padding: 0.4rem;
+                    border: 1px solid var(--brand-border);
+                    border-radius: 0.4rem;
+                    text-align: center;
+                }
+
+                /* RESUMEN */
+                .nf-summary-box {
+                    background: #f8fafc;
+                    border: 1px solid var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    padding: 1.5rem;
+                }
+                .nf-summary-row {
                     display: flex;
                     justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 0.5rem;
+                    margin-bottom: 0.75rem;
+                    font-size: 0.95rem;
                 }
-
-                .nf-orden-nombre {
-                    font-weight: 600;
-                    color: var(--brand-primary);
-                    font-size: 1rem;
-                }
-
-                .nf-orden-info {
-                    font-size: 0.85rem;
-                    color: var(--brand-text-muted);
-                }
-
-                .nf-orden-monto {
-                    font-size: 1.1rem;
+                .nf-summary-total {
+                    border-top: 2px solid var(--brand-border);
+                    padding-top: 1rem;
+                    margin-top: 1rem;
                     font-weight: 700;
+                    font-size: 1.25rem;
                     color: var(--brand-primary);
+                }
+
+                .nf-doc-badge {
+                    background: var(--brand-primary);
+                    color: white;
+                    padding: 0.25rem 0.75rem;
+                    border-radius: 2rem;
+                    font-size: 0.8rem;
+                    font-weight: 700;
                 }
 
                 .nf-btn {
-                    display: inline-block;
-                    padding: 0.5rem 1rem;
-                    border: none;
+                    padding: 0.75rem 1.5rem;
                     border-radius: var(--brand-radius);
                     font-weight: 600;
-                    font-size: 0.875rem;
-                    cursor: pointer;
                     transition: all 0.2s;
-                    text-align: center;
-                    text-decoration: none;
-                    font-family: 'Inter', sans-serif;
-                }
-
-                .nf-btn-primary {
-                    background: var(--brand-primary);
-                    color: white;
-                }
-
-                .nf-btn-primary:hover {
-                    background: var(--brand-primary-dark);
-                    color: white;
-                    transform: translateY(-1px);
-                }
-
-                .nf-btn-secondary {
-                    background: #6b7280;
-                    color: white;
-                }
-
-                .nf-btn-secondary:hover {
-                    background: #4b5563;
-                    color: white;
-                    transform: translateY(-1px);
-                }
-
-                .nf-btn-block {
-                    width: 100%;
-                }
-
-                .nf-resumen {
-                    background: var(--brand-light);
-                    border-left: 4px solid var(--brand-primary);
-                    padding: 1rem;
-                    border-radius: 0 var(--brand-radius) var(--brand-radius) 0;
-                    margin-bottom: 1rem;
-                }
-
-                .nf-resumen-item {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-bottom: 0.5rem;
-                    font-size: 0.95rem;
-                    color: var(--brand-text);
-                }
-
-                .nf-resumen-item:last-child {
-                    margin-bottom: 0;
-                    border-top: 1px solid rgba(22,101,52,.3);
-                    padding-top: 0.5rem;
-                    font-size: 1.1rem;
-                    font-weight: 700;
-                    color: var(--brand-primary);
-                }
-
-                .form-control, .form-select {
-                    border-color: var(--brand-border);
-                    border-radius: var(--brand-radius);
-                    font-family: 'Inter', sans-serif;
-                    color: var(--brand-text);
-                    font-size: 0.9rem;
-                }
-
-                .form-control:focus, .form-select:focus {
-                    border-color: var(--brand-primary);
-                    box-shadow: 0 0 0 0.2rem rgba(22,101,52,.15);
-                }
-
-                .nf-empty-message {
-                    text-align: center;
-                    padding: 2rem;
-                    background: var(--brand-bg);
-                    border-radius: var(--brand-radius);
-                    color: var(--brand-text-muted);
-                }
-
-                .nf-tab-buttons {
-                    display: flex;
-                    gap: 1rem;
-                    margin-bottom: 1.5rem;
-                    border-bottom: 2px solid var(--brand-border);
-                }
-
-                .nf-tab-btn {
-                    padding: 1rem;
+                    cursor: pointer;
                     border: none;
-                    background: none;
-                    color: var(--brand-text-muted);
-                    font-weight: 600;
-                    cursor: pointer;
-                    border-bottom: 3px solid transparent;
-                    transition: all 0.2s;
-                    font-family: 'Inter', sans-serif;
                 }
-
-                .nf-tab-btn:hover {
-                    color: var(--brand-text);
-                }
-
-                .nf-tab-btn.active {
-                    color: var(--brand-primary);
-                    border-bottom-color: var(--brand-primary);
-                }
-
-                .nf-tab-content {
-                    display: none;
-                }
-
-                .nf-tab-content.active {
-                    display: block;
-                }
+                .nf-btn-primary { background: var(--brand-primary); color: white; }
+                .nf-btn-primary:disabled { background: var(--brand-secondary); opacity: 0.6; }
+                .nf-btn-outline { background: white; border: 1px solid var(--brand-border); color: var(--brand-text); }
             </style>
 
             <div class="nf-page">
-                <div class="container">
+                <div class="container" style="max-width: 800px;">
 
                     <!-- HEADER -->
-                    <div class="mb-4">
-                        <a href="/facturacion" class="text-muted" style="text-decoration: none;">← Volver al Panel</a>
-                        <h1 class="nf-title mt-2">Crear Nueva Factura</h1>
+                    <div class="mb-4 d-flex justify-content-between align-items-center">
+                        <div>
+                            <a href="/facturacion" class="text-muted small" style="text-decoration: none;">← Volver al Panel</a>
+                            <h1 class="nf-title mt-1">Nueva Factura de Venta</h1>
+                        </div>
+                        <div class="text-end">
+                            <span class="text-muted small">Emisor:</span><br/>
+                            <strong>NIILDA SA (Responsable Inscripto)</strong>
+                        </div>
                     </div>
 
-                    <!-- ADVERTENCIA -->
-                    <div class="nf-warning-box">
-                        <strong>⚠️ IMPORTANTE:</strong> Selecciona una orden de venta o compra para generar su factura.
+                    <!-- WIZARD STEPS -->
+                    <div class="nf-steps">
+                        <div id="step-1-pill" class="nf-step active">1</div>
+                        <div id="step-2-pill" class="nf-step">2</div>
+                        <div id="step-3-pill" class="nf-step">3</div>
+                        <div id="step-4-pill" class="nf-step">4</div>
                     </div>
 
-                    <!-- TAB BUTTONS -->
                     <div class="nf-card">
-                        <div class="nf-tab-buttons">
-                            <button type="button" class="nf-tab-btn active" onclick="cambiarTab('ventas')">
-                                📈 Órdenes de Venta
-                            </button>
-                            <button type="button" class="nf-tab-btn" onclick="cambiarTab('compras')">
-                                📉 Órdenes de Compra
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- TAB: ÓRDENES DE VENTA -->
-                    <div id="tab-ventas" class="nf-tab-content active">
-                        <div class="nf-card">
-                            <h3 class="nf-section-title">📈 Órdenes de Venta Pendientes</h3>
-
-                            <t t-if="ordenes_venta">
-                                <div id="ordenesVentaContainer">
+                        
+                        <!-- STEP 1: SELECCIONAR VENTA -->
+                        <div id="step-1" class="nf-step-content active">
+                            <h3 class="nf-section-title">📦 1. Seleccionar Orden de Venta</h3>
+                            <div class="nf-orden-list">
+                                <t t-if="ordenes_venta">
                                     <t t-foreach="ordenes_venta" t-as="orden">
-                                        <div class="nf-orden-selector" onclick="seleccionarOrden(this, 'venta', {@orden.id})">
-                                            <div class="nf-orden-header">
-                                                <div class="nf-orden-nombre"><t t-esc="orden.name"/></div>
-                                                <div class="nf-orden-monto">$ <t t-esc="'%.2f' % orden.amount_total"/></div>
+                                        <div class="nf-orden-item" t-att-data-id="orden.id" onclick="seleccionarOrden(this)">
+                                            <div class="d-flex justify-content-between">
+                                                <strong><t t-esc="orden.name"/></strong>
+                                                <span class="text-primary fw-bold">$<t t-esc="'%.2f' % orden.amount_total"/></span>
                                             </div>
-                                            <div class="nf-orden-info">
-                                                <strong>Cliente:</strong> <t t-esc="orden.partner_id.name"/> | 
-                                                <strong>Fecha:</strong> <t t-esc="orden.date_order.strftime('%d/%m/%Y')"/>
-                                            </div>
-                                        </div>
-                                    </t>
-                                </div>
-                            </t>
-                            <t t-else="">
-                                <div class="nf-empty-message">
-                                    <p>✓ No hay órdenes de venta pendientes de facturación</p>
-                                </div>
-                            </t>
-                        </div>
-                    </div>
-
-                    <!-- TAB: ÓRDENES DE COMPRA -->
-                    <div id="tab-compras" class="nf-tab-content">
-                        <div class="nf-card">
-                            <h3 class="nf-section-title">📉 Órdenes de Compra Pendientes</h3>
-
-                            <t t-if="ordenes_compra">
-                                <div id="ordenesCompraContainer">
-                                    <t t-foreach="ordenes_compra" t-as="orden">
-                                        <div class="nf-orden-selector" onclick="seleccionarOrden(this, 'compra', {@orden.id})">
-                                            <div class="nf-orden-header">
-                                                <div class="nf-orden-nombre"><t t-esc="orden.name"/></div>
-                                                <div class="nf-orden-monto">$ <t t-esc="'%.2f' % orden.amount_total"/></div>
-                                            </div>
-                                            <div class="nf-orden-info">
-                                                <strong>Proveedor:</strong> <t t-esc="orden.partner_id.name"/> | 
-                                                <strong>Fecha:</strong> <t t-esc="orden.date_order.strftime('%d/%m/%Y')"/>
+                                            <div class="small text-muted">
+                                                Cliente: <t t-esc="orden.partner_id.name"/> | 
+                                                Fecha: <t t-esc="orden.date_order.strftime('%d/%m/%Y')"/>
                                             </div>
                                         </div>
                                     </t>
+                                </t>
+                                <t t-else="">
+                                    <div class="text-center p-4 text-muted">No hay órdenes de venta pendientes.</div>
+                                </t>
+                            </div>
+                            <div class="mt-4 text-end">
+                                <button class="nf-btn nf-btn-primary" onclick="irAStep(2)" id="btnStep1" disabled="true">Siguiente →</button>
+                            </div>
+                        </div>
+
+                        <!-- STEP 2: DATOS DEL RECEPTOR -->
+                        <div id="step-2" class="nf-step-content">
+                            <h3 class="nf-section-title">👤 2. Datos del Receptor</h3>
+                            <div class="row">
+                                <div class="col-md-12 nf-form-group">
+                                    <label class="nf-label">Nombre o Razón Social</label>
+                                    <input type="text" id="partner_name" class="nf-input"/>
                                 </div>
-                            </t>
-                            <t t-else="">
-                                <div class="nf-empty-message">
-                                    <p>✓ No hay órdenes de compra pendientes de facturación</p>
+                                <div class="col-md-6 nf-form-group">
+                                    <label class="nf-label">CUIT / DNI</label>
+                                    <input type="text" id="partner_vat" class="nf-input"/>
                                 </div>
-                            </t>
+                                <div class="col-md-6 nf-form-group">
+                                    <label class="nf-label">Posición Fiscal</label>
+                                    <select id="partner_afip_type" class="nf-select" onchange="actualizarTipoDocumento()">
+                                        <option value="">Seleccionar...</option>
+                                        <t t-foreach="posiciones_fiscales" t-as="pos">
+                                            <option t-att-value="pos['id']"><t t-esc="pos['name']"/></option>
+                                        </t>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="nf-summary-box mb-3" id="doc_type_preview" style="display:none; background: #fffbeb; border-color: #fcd34d;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="nf-doc-badge" id="badge_tipo">?</span>
+                                    <span class="small" id="text_tipo">Se generará este tipo de documento.</span>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <button class="nf-btn nf-btn-outline" onclick="irAStep(1)">← Atrás</button>
+                                <button class="nf-btn nf-btn-primary" onclick="irAStep(3)">Siguiente →</button>
+                            </div>
                         </div>
+
+                        <!-- STEP 3: DETALLE DE PRODUCTOS -->
+                        <div id="step-3" class="nf-step-content">
+                            <h3 class="nf-section-title">🛒 3. Detalle de Productos</h3>
+                            <div class="table-responsive">
+                                <table class="nf-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th style="width:100px">Cant.</th>
+                                            <th style="width:150px">Precio Unit.</th>
+                                            <th style="width:120px">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tabla_productos">
+                                        <!-- Dinámico -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-4 d-flex justify-content-between">
+                                <button class="nf-btn nf-btn-outline" onclick="irAStep(2)">← Atrás</button>
+                                <button class="nf-btn nf-btn-primary" onclick="irAStep(4)">Siguiente →</button>
+                            </div>
+                        </div>
+
+                        <!-- STEP 4: CONFIRMACIÓN -->
+                        <div id="step-4" class="nf-step-content">
+                            <h3 class="nf-section-title">✅ 4. Confirmación Final</h3>
+                            <div class="nf-summary-box">
+                                <div class="nf-summary-row">
+                                    <span>Orden Original:</span>
+                                    <strong id="sum_orden">-</strong>
+                                </div>
+                                <div class="nf-summary-row">
+                                    <span>Tipo de Factura:</span>
+                                    <strong id="sum_tipo">-</strong>
+                                </div>
+                                <div class="nf-summary-row">
+                                    <span>Receptor:</span>
+                                    <strong id="sum_receptor">-</strong>
+                                </div>
+                                <div class="nf-summary-row">
+                                    <span>CUIT/DNI:</span>
+                                    <strong id="sum_vat">-</strong>
+                                </div>
+                                <div class="nf-summary-total">
+                                    <span>TOTAL A FACTURAR:</span>
+                                    <span id="sum_total">$0.00</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 d-flex justify-content-between">
+                                <button class="nf-btn nf-btn-outline" onclick="irAStep(3)">← Atrás</button>
+                                <button class="nf-btn nf-btn-primary" onclick="crearFacturaFinal()" id="btnCrear">Confirmar y Crear Factura</button>
+                            </div>
+                        </div>
+
                     </div>
-
-                    <!-- SECCIÓN DE CONFIRMACIÓN -->
-                    <div class="nf-card" id="seccionConfirmacion" style="display: none;">
-                        <h3 class="nf-section-title">Resumen de Factura</h3>
-
-                        <div class="nf-resumen">
-                            <div class="nf-resumen-item">
-                                <span>Orden:</span>
-                                <strong id="resumenOrden">-</strong>
-                            </div>
-                            <div class="nf-resumen-item">
-                                <span>Socio:</span>
-                                <strong id="resumenSocio">-</strong>
-                            </div>
-                            <div class="nf-resumen-item">
-                                <span>Total a Facturar:</span>
-                                <strong id="resumenMonto">$0.00</strong>
-                            </div>
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn nf-btn nf-btn-primary nf-btn-block" 
-                                    onclick="crearFactura()" 
-                                    style="padding: 0.75rem; flex: 1;">
-                                ✓ Crear Factura
-                            </button>
-                            <a href="/facturacion" class="btn nf-btn nf-btn-secondary" style="padding: 0.75rem;">
-                                ← Cancelar
-                            </a>
-                        </div>
-                    </div>
-
                 </div>
             </div>
 
             <!-- JAVASCRIPT -->
             <script type="text/javascript">
-
-                let ordenSeleccionada = {
-                    id: null,
-                    tipo: null,
-                    nombre: null,
-                    socio: null,
-                    monto: 0
+                let state = {
+                    currentStep: 1,
+                    orden: null,
+                    partner: { id: null, name: '', vat: '', afip_type_id: null },
+                    lineas: [],
+                    documentType: { id: null, name: '', code: '' }
                 };
 
-                function cambiarTab(tab) {
-                    // Ocultar todos los tabs
-                    document.getElementById('tab-ventas').classList.remove('active');
-                    document.getElementById('tab-compras').classList.remove('active');
-
-                    // Ocultar todos los botones de tab
-                    document.querySelectorAll('.nf-tab-btn').forEach(btn => {
-                        btn.classList.remove('active');
-                    });
-
-                    // Mostrar tab seleccionado
-                    document.getElementById('tab-' + tab).classList.add('active');
-
-                    // Activar botón
-                    event.target.classList.add('active');
-
-                    // Limpiar selección
-                    limpiarSeleccion();
-                }
-
-                function seleccionarOrden(elemento, tipo, id) {
-                    // Limpiar selecciones anteriores
-                    document.querySelectorAll('.nf-orden-selector').forEach(sel => {
-                        sel.classList.remove('selected');
-                    });
-
-                    // Marcar como seleccionado
-                    elemento.classList.add('selected');
-
-                    // Obtener datos
-                    const nombre = elemento.querySelector('.nf-orden-nombre').innerText;
-                    const socio = elemento.querySelector('.nf-orden-info').innerText.split('|')[0].replace('Cliente:', '').replace('Proveedor:', '').trim();
-                    const monto = parseFloat(elemento.querySelector('.nf-orden-monto').innerText.replace('$ ', '').replace(',', '.'));
-
-                    // Guardar selección
-                    ordenSeleccionada = { id, tipo, nombre, socio, monto };
-
-                    // Actualizar resumen
-                    document.getElementById('resumenOrden').innerText = nombre;
-                    document.getElementById('resumenSocio').innerText = socio;
-                    document.getElementById('resumenMonto').innerText = '$' + monto.toFixed(2);
-
-                    // Mostrar sección de confirmación
-                    document.getElementById('seccionConfirmacion').style.display = 'block';
-                    
-                    // Scroll a la sección
-                    document.getElementById('seccionConfirmacion').scrollIntoView({ behavior: 'smooth' });
-                }
-
-                function limpiarSeleccion() {
-                    document.querySelectorAll('.nf-orden-selector').forEach(sel => {
-                        sel.classList.remove('selected');
-                    });
-                    document.getElementById('seccionConfirmacion').style.display = 'none';
-                    ordenSeleccionada = { id: null, tipo: null, nombre: null, socio: null, monto: 0 };
-                }
-
-                function crearFactura() {
-                    if (!ordenSeleccionada.id) {
-                        alert('Selecciona una orden');
-                        return;
+                function irAStep(n) {
+                    // Validaciones básicas
+                    if (n > state.currentStep) {
+                        if (state.currentStep === 2 &amp;&amp; (!state.partner.name || !state.partner.afip_type_id)) {
+                            alert('Complete los datos del receptor');
+                            return;
+                        }
                     }
 
-                    const btn = event.target;
-                    const txtBtn = btn.innerText;
-                    btn.disabled = true;
-                    btn.innerHTML = '⏳ Procesando...';
+                    document.querySelectorAll('.nf-step-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById('step-' + n).classList.add('active');
+                    
+                    state.currentStep = n;
+                    actualizarPills();
+                    
+                    if (n === 4) prepararResumen();
+                }
 
-                    fetch('/facturacion/crear_factura', {
+                function actualizarPills() {
+                    for (let i = 1; i &lt;= 4; i++) {
+                        const pill = document.getElementById('step-' + i + '-pill');
+                        pill.classList.remove('active', 'completed');
+                        if (i === state.currentStep) pill.classList.add('active');
+                        else if (i &lt; state.currentStep) pill.classList.add('completed');
+                    }
+                }
+
+                function seleccionarOrden(el) {
+                    const id = el.dataset.id;
+                    document.querySelectorAll('.nf-orden-item').forEach(i => i.classList.remove('selected'));
+                    el.classList.add('selected');
+                    
+                    document.getElementById('btnStep1').innerText = '⏳ Cargando...';
+
+                    fetch('/facturacion/detalle_orden', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            jsonrpc: "2.0",
-                            method: "call",
-                            params: {
-                                orden_id: ordenSeleccionada.id,
-                                tipo_orden: ordenSeleccionada.tipo
-                            }
-                        })
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({jsonrpc: "2.0", method: "call", params: {orden_id: parseInt(id)}})
                     })
                     .then(r => r.json())
                     .then(data => {
-                        if (data.result &amp;&amp; data.result.success) {
-                            alert(data.result.message);
-                            window.location.href = '/facturacion';
-                        } else {
-                            alert('Error: ' + (data.result ? data.result.message : 'Unknown'));
-                            btn.disabled = false;
-                            btn.innerText = txtBtn;
+                        const res = data.result;
+                        if (res.success) {
+                            state.orden = res.orden;
+                            state.partner = res.partner;
+                            state.lineas = res.lineas;
+                            
+                            // Pre-llenar Form Step 2
+                            document.getElementById('partner_name').value = res.partner.name;
+                            document.getElementById('partner_vat').value = res.partner.vat;
+                            document.getElementById('partner_afip_type').value = res.partner.afip_type_id;
+                            
+                            // Cargar tabla Step 3
+                            cargarTablaProductos();
+                            
+                            // Resetear tipo de documento antes de recalcular
+                            state.documentType = { id: null, name: '', code: '' };
+                            document.getElementById('doc_type_preview').style.display = 'none';
+                            actualizarTipoDocumento();
+                            
+                            document.getElementById('btnStep1').disabled = false;
+                            document.getElementById('btnStep1').innerText = 'Siguiente →';
                         }
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        alert('Error de conexión');
-                        btn.disabled = false;
-                        btn.innerText = txtBtn;
                     });
                 }
 
+                function cargarTablaProductos() {
+                    const tbody = document.getElementById('tabla_productos');
+                    tbody.innerHTML = '';
+                    state.lineas.forEach((l, index) => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${l.name}</td>
+                            <td><input type="number" class="nf-qty-input" value="${l.quantity}" onchange="updateLine(${index}, 'quantity', this.value)"/></td>
+                            <td><input type="number" step="0.01" class="nf-price-input" value="${l.price_unit}" onchange="updateLine(${index}, 'price_unit', this.value)"/></td>
+                            <td class="fw-bold text-end">$${(l.quantity * l.price_unit).toFixed(2)}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+
+                function updateLine(index, field, value) {
+                    state.lineas[index][field] = parseFloat(value);
+                    cargarTablaProductos();
+                }
+
+                function actualizarTipoDocumento() {
+                    const afip_type_id = document.getElementById('partner_afip_type').value;
+                    state.partner.afip_type_id = afip_type_id;
+                    state.partner.name = document.getElementById('partner_name').value;
+                    state.partner.vat = document.getElementById('partner_vat').value;
+
+                    if (!afip_type_id) {
+                        document.getElementById('doc_type_preview').style.display = 'none';
+                        return;
+                    }
+
+                    fetch('/facturacion/tipos_documento', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({jsonrpc: "2.0", method: "call", params: {posicion_fiscal_receptor_id: afip_type_id}})
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        const res = data.result;
+                        if (res &amp;&amp; res.id) {
+                            state.documentType = res;
+                            document.getElementById('badge_tipo').innerText = res.name;
+                            document.getElementById('badge_tipo').className = "nf-doc-badge";
+                            document.getElementById('text_tipo').innerText = "Se generará este tipo de documento.";
+                            document.getElementById('text_tipo').style.color = "inherit";
+                            document.getElementById('doc_type_preview').style.display = 'block';
+                        } else {
+                            state.documentType = { id: null, name: 'NO DETERMINADO', code: '' };
+                            document.getElementById('badge_tipo').innerText = "AVISO";
+                            document.getElementById('badge_tipo').className = "nf-doc-badge bg-warning text-dark";
+                            
+                            // Mostrar diagnóstico si viene del backend
+                            const errorMsg = (res &amp;&amp; res.name) ? res.name : "No se encontró un tipo de factura (A/B) para esta posición. Verifique la configuración de AFIP.";
+                            document.getElementById('text_tipo').innerText = errorMsg;
+                            document.getElementById('text_tipo').style.color = "red";
+                            document.getElementById('doc_type_preview').style.display = 'block';
+                        }
+                    });
+                }
+
+                function prepararResumen() {
+                    document.getElementById('sum_orden').innerText = state.orden ? state.orden.name : '-';
+                    document.getElementById('sum_tipo').innerText = state.documentType.id ? state.documentType.name : 'NO SELECCIONADO';
+                    document.getElementById('sum_tipo').style.color = state.documentType.id ? 'inherit' : 'red';
+                    
+                    document.getElementById('sum_receptor').innerText = document.getElementById('partner_name').value || '-';
+                    document.getElementById('sum_vat').innerText = document.getElementById('partner_vat').value || '-';
+                    
+                    const total = state.lineas.reduce((acc, l) => acc + (l.quantity * l.price_unit), 0);
+                    document.getElementById('sum_total').innerText = '$' + total.toFixed(2);
+                    
+                    // Bloquear botón crear si no hay tipo de documento
+                    document.getElementById('btnCrear').disabled = !state.documentType.id;
+                }
+
+                function crearFacturaFinal() {
+                    if (!state.documentType.id) {
+                        alert('ERROR: No se ha detectado el tipo de factura (A o B). El diario lo requiere.');
+                        return;
+                    }
+                    const btn = document.getElementById('btnCrear');
+                    btn.disabled = true;
+                    btn.innerHTML = '⏳ Procesando Factura...';
+
+                    const payload = {
+                        orden_id: state.orden.id,
+                        partner_data: {
+                            id: state.partner.id,
+                            name: document.getElementById('partner_name').value,
+                            vat: document.getElementById('partner_vat').value,
+                            afip_type_id: parseInt(document.getElementById('partner_afip_type').value)
+                        },
+                        lineas: state.lineas,
+                        document_type_id: state.documentType.id
+                    };
+
+                    fetch('/facturacion/crear_factura', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({jsonrpc: "2.0", method: "call", params: payload})
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        const res = data.result;
+                        if (res &amp;&amp; res.success) {
+                            alert('¡Excelente! Factura creada y publicada.');
+                            window.location.href = res.url;
+                        } else {
+                            alert('Error: ' + (res ? res.message : 'Error desconocido'));
+                            btn.disabled = false;
+                            btn.innerHTML = 'Confirmar y Crear Factura';
+                        }
+                    })
+                    .catch(e => {
+                        alert('Error de red');
+                        btn.disabled = false;
+                    });
+                }
             </script>
 
         </t>
