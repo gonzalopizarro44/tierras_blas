@@ -219,12 +219,14 @@ publicWidget.registry.PanelWeb = publicWidget.Widget.extend({
         const newPage = parseInt($btn.data('page'));
         const endpoint = $pagination.data('endpoint');
         const metricKey = $pagination.data('metric');
-        // Parse columns from string to array
-        const columns = JSON.parse($pagination.data('columns'));
         const fechaDesde = $pagination.data('fecha-desde');
         const fechaHasta = $pagination.data('fecha-hasta');
 
-        console.log(`Pagination Clicked: Page ${newPage} for metric ${metricKey}`);
+        // Obtener columns de la configuración, no del HTML
+        const config = this._getMetricasConfig()[metricKey];
+        const columns = config ? config.columns : [];
+
+        console.log(`%c[PanelWeb] Pagination Clicked: Page ${newPage} for metric ${metricKey}`, "color: #166534", {columns});
         this._cargarPaginaDetalle(endpoint, newPage, columns, metricKey, fechaDesde, fechaHasta);
     },
 
@@ -438,9 +440,9 @@ publicWidget.registry.PanelWeb = publicWidget.Widget.extend({
     },
 
     _generarPaginacion: function(data, page, endpoint, metricKey, columns, fechaDesde, fechaHasta) {
-        console.log("Generating pagination...");
+        console.log("%c[PanelWeb] Generating pagination...", "color: #166534");
         let html = '<nav class="modal-pagination">';
-        html += `<ul class="pagination" data-endpoint="${endpoint}" data-metric="${metricKey}" data-columns='${JSON.stringify(columns)}' data-fecha-desde="${fechaDesde}" data-fecha-hasta="${fechaHasta}">`;
+        html += `<ul class="pagination" data-endpoint="${endpoint}" data-metric="${metricKey}" data-fecha-desde="${fechaDesde}" data-fecha-hasta="${fechaHasta}">`;
 
         if (page > 1) {
             html += `<li class="page-item"><a class="page-link btn-pagination" href="#" data-page="${page - 1}">← Anterior</a></li>`;
