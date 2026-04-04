@@ -163,20 +163,30 @@ class FacturacionController(http.Controller):
         res = self._obtener_servicio_facturacion().determinar_tipo_documento(posicion_fiscal_receptor_id)
         return res or {'success': False, 'message': 'No se pudo determinar el tipo de documento'}
 
+    @http.route('/facturacion/validar', type='jsonrpc', auth='user', 
+                 website=True, methods=['POST'])
+    def validar_afip(self, factura_id):
+        """Valida la factura ante ARCA/AFIP."""
+        if not self._validar_permisos():
+            return {'success': False, 'message': 'No tiene permisos.'}
+        
+        return self._obtener_servicio_facturacion().validar_factura_arca(factura_id)
+
     # ═════════════════════════════════════════════════════════════════════════
     # RUTA GET: /facturacion/pdf/<int:factura_id> - Descargar PDF
     # ═════════════════════════════════════════════════════════════════════════
 
-    @http.route('/facturacion/pdf/<int:factura_id>', type='http', auth='user', website=True)
-    def descargar_pdf_factura(self, factura_id):
+    @http.route(['/facturacion/pdf/<int:factura_id>', '/v1/download_invoice/<int:factura_id>'], 
+                type='http', auth='user', website=True)
+    def descargar_pdf_factura(self, factura_id, **kwargs):
         """
-        Descarga el PDF de una factura.
+        Descarga el PDF oficial de una factura (Localización Argentina).
         
         Parámetros:
         - factura_id: ID de account.move
         
         Returns:
-            http.Response: PDF descargable
+            http.Response: PDF descargable o error si no está validada
         """
         # ── Validar permisos ──
         if not self._validar_permisos():
@@ -186,24 +196,40 @@ class FacturacionController(http.Controller):
         factura = request.env['account.move'].sudo().browse(factura_id)
         
         if not factura.exists():
-            return request.redirect('/facturacion')
+            return request.make_response("Error: factura no encontrada.", status=404)
+
+        # ── Validación de Estado (Requisito: POSTED) ──
+        if factura.state == 'draft':
+            return request.make_response(
+                "Error: La factura está en borrador. Debe validarla en ARCA antes de descargar el PDF.", 
+                status=403
+            )
 
         # ── Generar y descargar PDF ──
         try:
-            # Buscar el reporte qweb-pdf registrado para facturas
-            reporte = request.env['ir.actions.report'].sudo().search([
-                ('model', '=', 'account.move'),
-                ('report_type', '=', 'qweb-pdf')
-            ], limit=1)
+            # 1. Intentar usar el reporte oficial de l10n_ar (con CAE y leyendas)
+            reporte_id = 'l10n_ar.report_invoice_with_payments'
+            reporte = request.env.ref(reporte_id, raise_if_not_found=False)
             
             if not reporte:
-                return request.redirect('/facturacion')
+                # 2. Fallback al reporte estándar de facturas
+                reporte = request.env.ref('account.account_invoices', raise_if_not_found=False)
+            
+            if not reporte:
+                # 3. Último recurso: búsqueda genérica
+                reporte = request.env['ir.actions.report'].sudo().search([
+                    ('model', '=', 'account.move'),
+                    ('report_type', '=', 'qweb-pdf')
+                ], limit=1)
+            
+            if not reporte:
+                return request.make_response("Error: reporte no encontrado en el sistema.", status=404)
             
             # Renderizar PDF
-            pdf_content, _ = reporte.render_qweb_pdf([factura_id])
+            pdf_content, _ = reporte.sudo()._render_qweb_pdf([factura_id])
             
-            # Preparar nombre de archivo seguro
-            safe_name = factura.name.replace('/', '_').replace(' ', '_')
+            # Preparar nombre de archivo oficial: FA-B 00001-00000003.pdf
+            safe_name = (factura.name or f"Factura_{factura.id}").replace('/', '_').replace(' ', '_')
             nombre_archivo = f"{safe_name}.pdf"
             
             return request.make_response(
@@ -212,12 +238,16 @@ class FacturacionController(http.Controller):
                     ('Content-Type', 'application/pdf'),
                     ('Content-Disposition', f'attachment; filename="{nombre_archivo}"'),
                     ('Cache-Control', 'no-cache, no-store, must-revalidate'),
-                    ('Pragma', 'no-cache'),
-                    ('Expires', '0'),
                 ]
             )
         except Exception as e:
-            return request.redirect('/facturacion')
+            import traceback
+            error_traceback = traceback.format_exc()
+            return request.make_response(
+                f"Error al generar factura legal:\n\n{str(e)}\n\nTraceback:\n{error_traceback}", 
+                [('Content-Type', 'text/plain')],
+                status=500
+            )
 
     # ═════════════════════════════════════════════════════════════════════════
     # RUTA POST: /facturacion/crear_factura - Crear factura desde orden

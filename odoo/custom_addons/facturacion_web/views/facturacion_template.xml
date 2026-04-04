@@ -308,7 +308,14 @@
 
                                                 <!-- Fecha -->
                                                 <td>
-                                                    <small><t t-esc="factura.invoice_date.strftime('%d/%m/%Y')"/></small>
+                                                    <small>
+                                                        <t t-if="factura.invoice_date">
+                                                            <t t-esc="factura.invoice_date.strftime('%d/%m/%Y')"/>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <span class="text-muted">Pendiente</span>
+                                                        </t>
+                                                    </small>
                                                 </td>
 
                                                 <!-- Estado (badge) -->
@@ -334,12 +341,22 @@
 
                                                 <!-- Acciones -->
                                                 <td>
-                                                    <a t-attf-href="/facturacion/pdf/{{factura.id}}" 
-                                                       class="btn facturacion-btn-sm facturacion-btn-info"
-                                                       t-att-download="'Factura_%s.pdf' % (factura.name or str(factura.id)).replace('/', '_')">
-                                                        📥 PDF
-                                                    </a>
+                                                    <!-- Botón Descargar: Solo si está publicada -->
+                                                    <t t-if="factura.state == 'posted'">
+                                                        <a t-attf-href="/v1/download_invoice/{{factura.id}}" 
+                                                           class="btn facturacion-btn-sm facturacion-btn-info"
+                                                           t-att-download="'Factura_%s.pdf' % (factura.name or str(factura.id)).replace('/', '_')">
+                                                            📥 Descargar PDF
+                                                        </a>
+                                                    </t>
+
+                                                    <!-- Botón Validar: Solo si está en borrador -->
                                                     <t t-if="factura.state == 'draft'">
+                                                        <button type="button" class="btn facturacion-btn-sm facturacion-btn-primary"
+                                                                onclick="validarFactura(this)" t-att-data-factura-id="factura.id">
+                                                            ⚡ Validar en ARCA
+                                                        </button>
+                                                        
                                                         <button type="button" class="btn facturacion-btn-sm facturacion-btn-danger"
                                                                 onclick="cancelarFactura(this)" t-att-data-factura-id="factura.id">
                                                             ✕ Cancelar
@@ -369,11 +386,57 @@
 
             <!-- JAVASCRIPT -->
             <script type="text/javascript">
+                /**
+                 * Valida una factura ante ARCA/AFIP
+                 */
+                function validarFactura(btn) {
+                    const facturaId = btn.getAttribute('data-factura-id');
+                    const txtOriginal = btn.innerHTML;
+
+                    if (!confirm('¿Desea validar esta factura ante ARCA/AFIP para obtener el CAE legal?')) return;
+
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Conectando con ARCA...';
+                    btn.classList.add('opacity-75');
+
+                    fetch('/facturacion/validar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            method: "call",
+                            params: { factura_id: parseInt(facturaId) }
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.result &amp;&amp; data.result.success) {
+                            alert('✅ Éxito: ' + data.result.message);
+                            location.reload();
+                        } else {
+                            const errorMsg = data.result ? data.result.message : (data.error ? data.error.message : 'Error desconocido');
+                            alert('❌ Error de ARCA: ' + errorMsg);
+                            btn.disabled = false;
+                            btn.innerHTML = txtOriginal;
+                            btn.classList.remove('opacity-75');
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('❌ Error de conexión con el servidor.');
+                        btn.disabled = false;
+                        btn.innerHTML = txtOriginal;
+                    });
+                }
+
+                /**
+                 * Cancela una factura en borrador
+                 */
                 function cancelarFactura(btn) {
                     const facturaId = btn.getAttribute('data-factura-id');
                     const txtBtn = btn.innerText;
 
-                    if (!confirm('¿Cancelar esta factura?')) return;
+                    if (!confirm('¿Está seguro de cancelar esta factura en borrador?')) return;
 
                     btn.disabled = true;
                     btn.innerHTML = '⏳ Procesando...';
@@ -393,7 +456,7 @@
                             alert(data.result.message);
                             location.reload();
                         } else {
-                            alert('Error: ' + (data.result ? data.result.message : 'Unknown'));
+                            alert('Error: ' + (data.result ? data.result.message : 'Desconocido'));
                             btn.disabled = false;
                             btn.innerText = txtBtn;
                         }
