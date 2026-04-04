@@ -329,8 +329,8 @@
                                 <select id="productoSelect" class="form-select">
                                     <option value="">-- Seleccionar producto --</option>
                                     <t t-foreach="productos" t-as="prod">
-                                        <option t-att-value="prod.id" t-att-data-price="prod.list_price">
-                                            <t t-esc="prod.name"/> - $<t t-esc="'%.2f' % prod.list_price"/>
+                                        <option t-att-value="prod['id']" t-att-data-price="prod['list_price']" t-att-data-stock="prod['free_qty']" t-att-data-is-service="1 if prod['is_service'] else 0">
+                                            <t t-esc="prod['display_name']"/> - $<t t-esc="'%.2f' % prod['list_price']"/>
                                         </option>
                                     </t>
                                 </select>
@@ -424,7 +424,7 @@
                 // Productos disponibles (para búsqueda rápida)
                 const productosData = [
                     <t t-foreach="productos" t-as="prod">
-                        { id: <t t-esc="prod.id"/>, name: "<t t-esc="prod.name.replace('&quot;', '\\&quot;')"/>", price: <t t-esc="prod.list_price"/> },
+                        { id: <t t-esc="prod['id']"/>, name: "<t t-esc="prod['name'].replace('&quot;', '\\&quot;')"/>", price: <t t-esc="prod['list_price']"/>, stock: <t t-esc="prod['free_qty']"/>, isService: <t t-esc="1 if prod['is_service'] else 0"/> },
                     </t>
                 ];
 
@@ -510,6 +510,19 @@
                     if (!producto) {
                         alert('Producto no encontrado');
                         return;
+                    }
+
+                    // ╔════════════════════════════════════════════════════════════╗
+                    // ║ VALIDACIÓN DE STOCK - BLINDAJE CONTRA SOBREVENTA          ║
+                    // ╚════════════════════════════════════════════════════════════╝
+                    if (!producto.isService) {
+                        // Solo validar stock si NO es un servicio
+                        const stockDisponible = parseFloat(select.options[select.selectedIndex].getAttribute('data-stock')) || 0;
+                        
+                        if (cantidad &gt; stockDisponible) {
+                            alert('La cantidad a vender debe ser igual o menor a ' + stockDisponible.toFixed(0) + ' u.');
+                            return;
+                        }
                     }
 
                     // Crear línea

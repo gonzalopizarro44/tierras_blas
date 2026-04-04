@@ -167,9 +167,38 @@ class VentasController(http.Controller):
             order='name asc'
         )
 
+        # ── Enriquecer productos con stock disponible ──
+        # Crear diccionarios mapeados con información de stock (sin modificar ORM)
+        productos_formateados = []
+        for p in productos:
+            # Obtener cantidad disponible según tipo de producto
+            if p.type == 'service':
+                # Los servicios no tienen stock
+                stock = 0
+                nombre_visual = p.display_name
+                is_service = True
+            else:
+                # Productos físicos: usar free_qty (cantidad disponible)
+                stock = p.free_qty
+                nombre_visual = "{} - Stock: {} u.".format(
+                    p.display_name,
+                    int(stock) if stock == int(stock) else stock
+                )
+                is_service = False
+            
+            productos_formateados.append({
+                'id': p.id,
+                'name': p.name,
+                'display_name': nombre_visual,
+                'list_price': p.list_price,
+                'free_qty': stock,
+                'type': p.type,
+                'is_service': is_service
+            })
+
         ctx = {
             'clientes': clientes,
-            'productos': productos,
+            'productos': productos_formateados,
             'journals': journals,
         }
 
