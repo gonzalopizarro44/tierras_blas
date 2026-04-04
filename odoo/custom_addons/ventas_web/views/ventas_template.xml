@@ -354,6 +354,21 @@
                                                             ✓ Confirmar
                                                         </button>
                                                     </t>
+                                                    <t t-elif="venta.state == 'sale'">
+                                                        <!-- Solo mostrar botón si hay entregas pendientes (assigned/confirmed) -->
+                                                        <t t-if="venta.id in order_ids_con_entregas">
+                                                            <button type="button" class="btn sales-btn-sm sales-btn-success"
+                                                                    onclick="validarEntrega(this)" t-att-data-order-id="venta.id">
+                                                                ✓ Validar Entrega
+                                                            </button>
+                                                        </t>
+                                                        <!-- Si NO hay entregas pendientes pero está en 'sale' -->
+                                                        <t t-else="">
+                                                            <button type="button" class="btn sales-btn-sm btn-secondary" disabled="disabled">
+                                                                ✓ Entregado
+                                                            </button>
+                                                        </t>
+                                                    </t>
                                                     <t t-if="venta.state in ('draft', 'sale')">
                                                         <button type="button" class="btn sales-btn-sm sales-btn-danger"
                                                                 onclick="cancelarVenta(this)" t-att-data-order-id="venta.id">
@@ -431,6 +446,43 @@
                     btn.innerHTML = '⏳ Procesando...';
 
                     fetch('/ventas/cancelar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            method: "call",
+                            params: { order_id: parseInt(orderId) }
+                        })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.result &amp;&amp; data.result.success) {
+                            alert(data.result.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (data.result ? data.result.message : 'Unknown'));
+                            btn.disabled = false;
+                            btn.innerText = txtBtn;
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        alert('Error de conexión');
+                        btn.disabled = false;
+                        btn.innerText = txtBtn;
+                    });
+                }
+
+                function validarEntrega(btn) {
+                    const orderId = btn.getAttribute('data-order-id');
+                    const txtBtn = btn.innerText;
+
+                    if (!confirm('¿Validar entrega? Se descontará el stock del inventario.')) return;
+
+                    btn.disabled = true;
+                    btn.innerHTML = '⏳ Procesando...';
+
+                    fetch('/ventas/validar_entrega', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

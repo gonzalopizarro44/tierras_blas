@@ -23,6 +23,9 @@ Uso:
 
 from odoo import models, api
 from datetime import datetime, timedelta
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class SalesService(models.AbstractModel):
@@ -30,6 +33,59 @@ class SalesService(models.AbstractModel):
     
     _name = 'sales.service'
     _description = 'Servicio de Ventas Web'
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # MÉTODO AUXILIAR: Logging
+    # ═════════════════════════════════════════════════════════════════════════
+
+    def _log_info(self, mensaje, order_id=None):
+        """
+        Registra un mensaje de información en los logs.
+        
+        Args:
+            mensaje (str): Mensaje a registrar
+            order_id (int, opcional): ID de la orden (para contexto)
+        """
+        contexto = f"[Orden {order_id}] " if order_id else "[Sales Service] "
+        _logger.info(contexto + mensaje)
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # MÉTODO AUXILIAR: Detección de entregas pendientes
+    # ═════════════════════════════════════════════════════════════════════════
+
+    def tiene_entregas_pendientes(self, order_id):
+        """
+        Verifica si una orden de venta tiene entregas (pickings outgoing) pendientes de validar.
+        
+        SINCRONIZACIÓN CON ODOO:
+        - Busca TODAS las entregas (stock.picking con picking_type_code='outgoing')
+        - Retorna True si al menos UNA está en estado 'assigned' o 'confirmed'
+        - Retorna False si todas están en 'done' o 'cancel'
+        
+        RENDIMIENTO:
+        - Usa search() sin mapped() para evitar N+1 queries
+        - Límite de 1 picking para cortocircuito rápido
+        
+        Args:
+            order_id (int): ID de la sale.order
+        
+        Returns:
+            bool: True si hay al menos una entrega pendiente, False si no
+        """
+        try:
+            # Buscar un picking outgoing en estado 'assigned' o 'confirmed'
+            # Si encuentra aunque sea uno, retorna True (cortocircuito)
+            picking_pendiente = self.env['stock.picking'].sudo().search([
+                ('sale_id', '=', int(order_id)),
+                ('picking_type_code', '=', 'outgoing'),
+                ('state', 'in', ['assigned', 'confirmed']),
+            ], limit=1)
+            
+            return bool(picking_pendiente)
+        
+        except (ValueError, TypeError):
+            # Si el order_id no es válido, retorna False
+            return False
 
     # ═════════════════════════════════════════════════════════════════════════
     # SECCIÓN 1: FILTROS AVANZADOS
@@ -451,3 +507,238 @@ class SalesService(models.AbstractModel):
                 'success': False,
                 'message': f'Error al cancelar: {str(e)}',
             }
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # SECCIÓN 6: VALIDACIÓN DE ENTREGAS (STOCK PICKING)
+    # ═════════════════════════════════════════════════════════════════════════
+
+    @api.model
+    def validar_entrega_venta(self, order_id):
+        """
+        Valida las entregas (pickings outgoing) de una orden de venta e incrementa stock.
+        
+        PROCESO PARA CADA PICKING:
+        1. Si está en draft: ejecutar action_confirm() → 'confirmed'
+        2. Ejecutar action_assign() - Asigna stock disponible a las líneas
+        3. Establece quantity en move_line_ids
+        4. Ejecuta button_validate() - Valida el picking y genera movimientos de stock
+        5. El stock.quant se actualiza automáticamente en la ubicación origen (disminuye)
+        
+        GARANTÍAS:
+        - Usa campos correctos de Odoo 19 (quantity en move_line)
+        - Completa la entrega al 100% (sin backorders parciales)
+        - Manejo robusto de errores
+        - Logging detallado en cada paso
+        
+        Args:
+            order_id (int): ID de la sale.order
+        
+        Returns:
+            dict: {
+                'success': bool,
+                'message': str,
+                'entregas_validadas': int,
+                'order_name': str
+            }
+        """
+        try:
+            orden = self.env['sale.order'].sudo().browse(int(order_id))
+
+            # ── Validar existencia ──
+            if not orden.exists():
+                self._log_info(f"Orden {order_id} no encontrada", order_id)
+                return {
+                    'success': False,
+                    'message': 'Orden no encontrada.',
+                }
+
+            # ── Validar que esté confirmada ──
+            if orden.state != 'sale':
+                self._log_info(f"Orden {orden.name} no está confirmada. Estado: {orden.state}", orden.id)
+                return {
+                    'success': False,
+                    'message': f'La orden debe estar confirmada. Estado actual: {orden.state}',
+                }
+
+            self._log_info(f"Iniciando validación de entregas para {orden.name}", orden.id)
+
+            # ── Validar automáticamente los pickings asociados ──
+            resultado_pickings = self._validar_pickings_venta(orden)
+
+            return resultado_pickings
+
+        except Exception as e:
+            error_detail = str(e)
+            self._log_info(f"ERROR CRÍTICO: {error_detail}", order_id)
+            return {
+                'success': False,
+                'message': f'Error inesperado al validar entregas: {error_detail}',
+            }
+
+    @api.model
+    def _validar_pickings_venta(self, orden):
+        """
+        Valida automáticamente todos los pickings outgoing (entregas) asociados a una orden de venta.
+        
+        FLUJO MEJORADO PARA CADA PICKING:
+        1. Si está en draft: ejecutar action_confirm()
+        2. Ejecutar action_assign() - Asigna stock disponible
+        3. Crear move_lines si no existen
+        4. Establece quantity en cada move_line
+        5. Ejecuta button_validate()
+        
+        GARANTÍAS:
+        - Usa campos correctos de Odoo 19
+        - Completa la entrega al 100%
+        - Logging detallado para debugging
+        - Manejo robusto de errores
+        
+        Args:
+            orden (sale.order): Orden ya confirmada
+        
+        Returns:
+            dict: {
+                'success': bool,
+                'message': str,
+                'entregas_validadas': int
+            }
+        """
+        try:
+            # Obtener todos los pickings outgoing asociados a esta orden
+            pickings = self.env['stock.picking'].sudo().search([
+                ('sale_id', '=', orden.id),
+                ('picking_type_code', '=', 'outgoing'),
+            ])
+
+            self._log_info(f"Procesando {len(pickings)} entrega(s) para orden {orden.name}", orden.id)
+
+            if not pickings:
+                self._log_info(f"No hay entregas para validar en orden {orden.name}", orden.id)
+                return {
+                    'success': True,
+                    'message': 'No se encontraron entregas para validar.',
+                    'entregas_validadas': 0,
+                }
+
+            entregas_validadas = 0
+            errores = []
+
+            for picking in pickings:
+                try:
+                    picking_name = picking.name
+                    self._log_info(f"Iniciando validación de entrega {picking_name}", orden.id)
+
+                    # ── VALIDACIÓN: Skip si ya está done ──
+                    if picking.state == 'done':
+                        self._log_info(f"Entrega {picking_name} ya está validada (done)", orden.id)
+                        entregas_validadas += 1
+                        continue
+
+                    # ── PASO 1: Confirmar si está en draft ──
+                    if picking.state == 'draft':
+                        self._log_info(f"Confirmando entrega {picking_name} (draft → confirmed)", orden.id)
+                        picking.action_confirm()
+
+                    # ── PASO 2: Asignar stock disponible ──
+                    if picking.state in ('confirmed', 'awaiting_picking'):
+                        try:
+                            self._log_info(f"Asignando stock disponible a {picking_name}", orden.id)
+                            picking.action_assign()
+                            self._log_info(f"Stock asignado correctamente a {picking_name}", orden.id)
+                        except Exception as assign_error:
+                            self._log_info(f"Aviso en asignación de {picking_name}: {str(assign_error)}", orden.id)
+
+                    # ── PASO 3: Crear o completar move_lines con cantidades ──
+                    self._preparar_move_lines_venta(picking, orden)
+
+                    # ── PASO 4: Validar el picking ──
+                    self._log_info(f"Validando entrega {picking_name} (button_validate)", orden.id)
+                    picking.button_validate()
+                    self._log_info(f"Entrega {picking_name} validada exitosamente. Stock descontado.", orden.id)
+
+                    entregas_validadas += 1
+
+                except Exception as e:
+                    error_msg = str(e)
+                    if hasattr(e, 'name'):
+                        error_msg = e.name
+                    
+                    self._log_info(f"ERROR en entrega {picking.name}: {error_msg}", orden.id)
+                    errores.append(f"Entrega {picking.name}: {error_msg}")
+
+            # ── RESULTADO FINAL ──
+            self._log_info(f"Proceso completado: {entregas_validadas}/{len(pickings)} entregas validadas", orden.id)
+            
+            if errores:
+                mensaje = f'{entregas_validadas} entrega(s) validada(s). Errores: {"; ".join(errores[:3])}'
+                return {
+                    'success': True if entregas_validadas > 0 else False,
+                    'message': mensaje,
+                    'entregas_validadas': entregas_validadas,
+                }
+
+            return {
+                'success': True,
+                'message': f'{entregas_validadas} entrega(s) validada(s) exitosamente. Stock descontado.',
+                'entregas_validadas': entregas_validadas,
+            }
+
+        except Exception as e:
+            self._log_info(f"ERROR CRÍTICO en validación de pickings: {str(e)}", orden.id)
+            return {
+                'success': False,
+                'message': f'Error crítico al validar entregas: {str(e)}',
+                'entregas_validadas': 0,
+            }
+
+    def _preparar_move_lines_venta(self, picking, orden):
+        """
+        Prepara las move_lines para validación: crea las que falten y setea quantity.
+        
+        Este método es crucial porque:
+        - Si no hay move_lines creadas, button_validate() no funciona
+        - Debe ser ejecutado DESPUÉS de action_assign()
+        - Setea quantity = cantidad esperada (para entregas sin lotes)
+        
+        Args:
+            picking (stock.picking): Picking a preparar
+            orden (sale.order): Orden asociada (para logging)
+        """
+        try:
+            self._log_info(f"Preparando move_lines para {picking.name}", orden.id)
+            
+            # Iterar sobre los movimientos (stock.move)
+            for move in picking.move_ids:
+                # Obtener o crear la move_line
+                move_lines = self.env['stock.move.line'].sudo().search([
+                    ('move_id', '=', move.id)
+                ], limit=1)
+                
+                if move_lines:
+                    # Ya existe move_line, solo actualizar quantity
+                    move_line = move_lines[0]
+                else:
+                    # Crear move_line
+                    self._log_info(f"Creando move_line para {move.product_id.name} en {picking.name}", orden.id)
+                    move_line = self.env['stock.move.line'].sudo().create({
+                        'move_id': move.id,
+                        'product_id': move.product_id.id,
+                        'product_uom_id': move.product_uom.id,
+                        'location_id': move.location_id.id,
+                        'location_dest_id': move.location_dest_id.id,
+                        'quantity': move.product_uom_qty,  # Campo correcto en Odoo 19
+                    })
+                    self._log_info(f"Move_line creada: {move.product_id.name} x {move.product_uom_qty}", orden.id)
+                    continue
+                
+                # Actualizar quantity si no está ya set
+                if move_line.quantity == 0 and move.product_uom_qty > 0:
+                    self._log_info(f"Actualizando quantity: {move.product_id.name} x {move.product_uom_qty}", orden.id)
+                    move_line.write({
+                        'quantity': move.product_uom_qty
+                    })
+                    
+        except Exception as e:
+            self._log_info(f"ERROR en preparación de move_lines: {str(e)}", orden.id)
+            raise  # Re-lanzar para que sea manejado por el caller
+

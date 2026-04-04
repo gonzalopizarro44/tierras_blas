@@ -92,6 +92,23 @@ class VentasController(http.Controller):
             order='date_order desc, id desc'
         )
 
+        # ── ENRIQUECIMIENTO: Calcular entregas pendientes en BATCH (sin N+1) ──
+        # En lugar de iterar y hacer queries individuales, hacemos una búsqueda única
+        # que obtiene TODOS los order_ids que tienen pickings outgoing pendientes
+        order_ids = [v.id for v in ventas]
+        
+        if order_ids:
+            # Búsqueda ÚNICA en batch: obtiene entregas pendientes para TODAS las órdenes
+            pickings_pendientes = request.env['stock.picking'].sudo().search([
+                ('sale_id', 'in', order_ids),
+                ('picking_type_code', '=', 'outgoing'),
+                ('state', 'in', ['assigned', 'confirmed']),
+            ])
+            # Crear un set de order_ids que tienen entregas pendientes (búsqueda O(1))
+            order_ids_con_entregas = set(pickings_pendientes.mapped('sale_id.id'))
+        else:
+            order_ids_con_entregas = set()
+
         # ── Obtener datos para la UI ──
         categorias = request.env['product.category'].sudo().search(
             [],
@@ -106,6 +123,7 @@ class VentasController(http.Controller):
         # ── Contexto para la vista ──
         ctx = {
             'ventas': ventas,
+            'order_ids_con_entregas': order_ids_con_entregas,
             'categorias': categorias,
             'clientes': clientes,
             'filtros': kwargs,  # Repoblar filtros en la UI
@@ -304,5 +322,45 @@ class VentasController(http.Controller):
         # ── Llamar al servicio ──
         sales_service = self._get_sales_service()
         resultado = sales_service.cancel_sale_order(order_id)
+
+        return resultado
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # RUTA POST: /ventas/validar_entrega - Validar entrega (stock.picking)
+    # ═════════════════════════════════════════════════════════════════════════
+
+    @http.route('/ventas/validar_entrega', type='jsonrpc', auth='user', website=True, methods=['POST'])
+    def validar_entrega_venta(self, order_id):
+        """
+        Valida las entregas (pickings outgoing) de una orden de venta.
+        
+        Usa: sales_service.validar_entrega_venta()
+        
+        PROCESO:
+        - Busca todas las entregas asociadas a la orden
+        - Para cada entrega en estado 'assigned' o 'confirmed':
+          1. Confirma si está en draft
+          2. Asigna stock disponible
+          3. Prepara move_lines con cantidades
+          4. Valida el picking (descuenta stock)
+        
+        Parámetros (JSON-RPC):
+        - order_id: ID de la sale.order
+        
+        Returns:
+            dict: {
+                'success': bool,
+                'message': str,
+                'entregas_validadas': int,
+                'order_name': str
+            }
+        """
+        # ── Validar permisos ──
+        if not self._check_permissions():
+            return {'success': False, 'message': 'No tiene permisos.'}
+
+        # ── Llamar al servicio ──
+        sales_service = self._get_sales_service()
+        resultado = sales_service.validar_entrega_venta(order_id)
 
         return resultado
