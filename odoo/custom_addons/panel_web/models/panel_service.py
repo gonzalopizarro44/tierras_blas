@@ -621,10 +621,17 @@ class PanelService(models.AbstractModel):
         # Construir respuesta
         items = []
         for venta in items_paginados:
+            # Obtener DNI/VAT del cliente
+            dni = venta.partner_id.vat or ''
+            if dni:
+                # Limpiar y formatear DNI (remover espacios y caracteres especiales)
+                dni = dni.replace(' ', '').strip()
+            
             items.append({
                 'id': venta.id,
                 'numero': venta.name,
                 'cliente': venta.partner_id.name,
+                'dni': dni,
                 'monto': round(venta.amount_total, 2),
                 'fecha': venta.date_order.strftime('%d/%m/%Y'),
                 'estado': venta.state,
@@ -665,10 +672,17 @@ class PanelService(models.AbstractModel):
         # Construir respuesta
         items = []
         for compra in items_paginados:
+            # Obtener DNI/VAT del proveedor
+            dni = compra.partner_id.vat or ''
+            if dni:
+                # Limpiar y formatear DNI (remover espacios y caracteres especiales)
+                dni = dni.replace(' ', '').strip()
+            
             items.append({
                 'id': compra.id,
                 'numero': compra.name,
                 'proveedor': compra.partner_id.name,
+                'dni': dni,
                 'monto': round(compra.amount_total, 2),
                 'fecha': compra.date_order.strftime('%d/%m/%Y'),
                 'estado': compra.state,

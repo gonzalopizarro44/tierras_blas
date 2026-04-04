@@ -373,18 +373,26 @@ publicWidget.registry.PanelWeb = publicWidget.Widget.extend({
             html += `<td>${item.sku || '-'}</td>`;
         } else if (['total-ventas', 'ingresos', 'ganancia-neta'].includes(metricKey)) {
             const monto = parseFloat(item.monto || 0);
+            const clienteDisplay = item.dni ? `${item.cliente} - ${item.dni}` : item.cliente;
+            const estadoColor = this._getColorEstado(item.estado);
+            const estadoLabel = this._getEstadoLabel(item.estado);
+            
             html += `<td>${item.numero || '-'}</td>`;
-            html += `<td>${item.cliente || '-'}</td>`;
+            html += `<td>${clienteDisplay || '-'}</td>`;
             html += `<td>$${monto.toFixed(2)}</td>`;
             html += `<td>${item.fecha || '-'}</td>`;
-            html += `<td><span class="badge bg-info">${item.estado || '-'}</span></td>`;
+            html += `<td><span class="badge" style="background-color: ${estadoColor};">${estadoLabel}</span></td>`;
         } else if (['total-compras', 'gastos'].includes(metricKey)) {
             const monto = parseFloat(item.monto || 0);
+            const proveedorDisplay = item.dni ? `${item.proveedor} - ${item.dni}` : item.proveedor;
+            const estadoColor = this._getColorEstado(item.estado);
+            const estadoLabel = this._getEstadoLabel(item.estado);
+            
             html += `<td>${item.numero || '-'}</td>`;
-            html += `<td>${item.proveedor || '-'}</td>`;
+            html += `<td>${proveedorDisplay || '-'}</td>`;
             html += `<td>$${monto.toFixed(2)}</td>`;
             html += `<td>${item.fecha || '-'}</td>`;
-            html += `<td><span class="badge bg-warning">${item.estado || '-'}</span></td>`;
+            html += `<td><span class="badge" style="background-color: ${estadoColor};">${estadoLabel}</span></td>`;
         } else if (metricKey === 'productos-activos') {
             const precio = parseFloat(item.precio || 0);
             html += `<td>${item.nombre || '-'}</td>`;
@@ -395,6 +403,38 @@ publicWidget.registry.PanelWeb = publicWidget.Widget.extend({
         
         html += '</tr>';
         return html;
+    },
+
+    _getColorEstado: function(estado) {
+        // Mapeo de estados de Odoo a colores
+        const estadoMap = {
+            'draft': '#FFC107',      // Amarillo - Pendiente
+            'sent': '#FFC107',       // Amarillo - Pendiente
+            'sale': '#28A745',       // Verde - Confirmado
+            'done': '#28A745',       // Verde - Completado
+            'cancel': '#DC3545',     // Rojo - Cancelado
+            'purchase': '#FFC107',   // Amarillo - Pendiente de compra
+            'to approve': '#FFC107', // Amarillo - Pendiente de aprobación
+            'approved': '#28A745',   // Verde - Aprobado
+            'rejected': '#DC3545',   // Rojo - Rechazado
+        };
+        return estadoMap[estado] || '#6C757D'; // Gris por defecto
+    },
+
+    _getEstadoLabel: function(estado) {
+        // Mapeo de estados de Odoo a etiquetas en español
+        const labelMap = {
+            'draft': 'Pendiente',
+            'sent': 'Pendiente',
+            'sale': 'Confirmado',
+            'done': 'Completado',
+            'cancel': 'Cancelado',
+            'purchase': 'Pendiente',
+            'to approve': 'Por Aprobar',
+            'approved': 'Aprobado',
+            'rejected': 'Rechazado',
+        };
+        return labelMap[estado] || estado;
     },
 
     _generarPaginacion: function(data, page, endpoint, metricKey, columns, fechaDesde, fechaHasta) {
