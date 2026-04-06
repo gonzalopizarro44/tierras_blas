@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="signup_inherit" inherit_id="auth_signup.signup" name="Signup Inherit Hide Passwords">
+        <!-- 1. "Comentar" campos de contraseña (solo se muestran si hay token, ej: invitaciones o reset) -->
+        <xpath expr="//t[@t-call='auth_signup.fields']" position="attributes">
+            <attribute name="t-if">token</attribute>
+        </xpath>
+
+        <!-- 2. Mostrar mensaje de éxito personalizado con botón de activación -->
+        <xpath expr="//form" position="before">
+            <div t-if="message and signup_success" class="custom-signup-container">
+                <div class="custom-signup-card shadow-sm">
+                    <div class="custom-signup-icon">
+                        <i class="fa fa-check-circle"/>
+                    </div>
+                    <h2 class="custom-signup-title">¡Registro Exitoso!</h2>
+                    <p class="custom-signup-message">
+                        <t t-esc="message"/>
+                    </p>
+                    <div class="mt-4">
+                        <a href="/web/reset_password" class="custom-signup-btn">
+                            Activar mi cuenta <i class="fa fa-arrow-right ms-2"/>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </xpath>
+
+        <!-- 3. Ocultar el formulario si el registro fue exitoso -->
+        <xpath expr="//form" position="attributes">
+            <attribute name="t-if">not signup_success</attribute>
+        </xpath>
+
+        <!-- 4. Cambiar tipo de email a 'email' -->
+        <xpath expr="//input[@name='login']" position="attributes">
+            <attribute name="type">email</attribute>
+        </xpath>
+    </template>
+    
+    <!-- Cambiar tipo de email también en reset_password -->
+    <template id="reset_password_inherit" inherit_id="auth_signup.reset_password" name="Reset Password Login Email Type">
+        <xpath expr="//input[@name='login']" position="attributes">
+            <attribute name="type">email</attribute>
+        </xpath>
+    </template>
+</odoo>
