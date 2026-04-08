@@ -11,9 +11,7 @@
              2. El botón original está comentado para poder reactivarlo fácilmente
              
              PLANTILLA HEREDADA: website_sale.shop_product_buttons
-             (Ubicación: /odoo/addons/website_sale/views/product_tile_templates.xml)
-        -->
-        
+             (Ubicación: /odoo/addons/website_sale/views/product_tile_templates.xml) -->
         <template id="tienda_web_shop_product_buttons" inherit_id="website_sale.shop_product_buttons">
             
             <!-- Buscar y reemplazar el botón principal (Add to Cart) -->
@@ -96,13 +94,9 @@
                        data-animation-selector=".o_wsale_product_images">
                         <i class="fa fa-shopping-cart me-2"/>
                         Add to cart
-                    </a>
-                     
-                -->
-                
+                    </a> -->
             </xpath>
         </template>
-
         <!-- ═══════════════════════════════════════════════════════════════════════════
              PERSONALIZACIÓN: Ocultar botón "Quick Reorder" 
              ═══════════════════════════════════════════════════════════════════════════
@@ -113,11 +107,8 @@
              directamente), este botón debe estar deshabilitado.
              
              HEREDADA DE: website_sale.quick_reorder_button
-             (Ubicación: /odoo/addons/website_sale/views/templates.xml:3124)
-        -->
-        
+             (Ubicación: /odoo/addons/website_sale/views/templates.xml:3124) -->
         <template id="tienda_web_quick_reorder_button" inherit_id="website_sale.quick_reorder_button">
-            
             <!-- Reemplazar todo el contenido con un comentario deshabilitado -->
             <xpath expr="//span[@t-att-title='quick_reorder_button_title']" position="replace">
                 
@@ -142,10 +133,7 @@
                         >
                             <i class="fa fa-rotate-left me-2"/>Quick reorder
                         </button>
-                    </span>
-                     
-                -->
-                
+                    </span> -->
             </xpath>
         </template>
 

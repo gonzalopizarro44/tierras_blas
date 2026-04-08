@@ -2,6 +2,7 @@
     'name': 'Custom Signup Flow',
     'version': '1.0',
     'summary': 'Custom registration flow with DNI and activation via reset password.',
+    'author': 'Gonzalo Pizarro',
     'description': 'Modifies the signup flow to require DNI and set password via email.',
     'category': 'Website/Website',
     'depends': ['auth_signup', 'website'],

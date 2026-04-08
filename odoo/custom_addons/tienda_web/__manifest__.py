@@ -10,11 +10,9 @@
         'website_sale',
         'product',
     ],
-
     'data': [
         'views/tienda_template.xml',
     ],
-
     'installable': True,
     'application': False,
 }

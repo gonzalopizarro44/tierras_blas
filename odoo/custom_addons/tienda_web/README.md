@@ -40,7 +40,7 @@ Módulo custom para personalizar la tienda online (/shop) de Odoo 19 con las sig
 - Se ocultó por consistencia y simplicidad de interfaz
 - Está comentado para poder reactivarse
 
----
+___
 
 ## Configuración Rápida
 
@@ -68,9 +68,9 @@ Y descomenta ambas (quita los `//`):
 window.open(urlBot, '_blank');
 ```
 
----
+___
 
----
+___
 
 ## Para Reactivar Elementos
 
@@ -98,7 +98,7 @@ window.open(urlBot, '_blank');
 3. Por ahora está simplemente ocultado con `d-none`, no comentado
 4. Para reactivar, comenta o elimina el atributo `d-none`
 
----
+___
 
 ## Estructura del Módulo
 
@@ -113,7 +113,7 @@ tienda_web/
     └── tienda_template.xml   # Todas las personalizaciones
 ```
 
----
+___
 
 ## Detalle de Cambios Técnicos
 
@@ -156,12 +156,12 @@ tienda_web/
 - **Función 2**: `solicitarCotizacionDetail(event)` - Para página de detalles
 - Ambas comparten la misma lógica, solo diferencia en cómo obtienen los datos del producto
 
----
+___
 
 ## 📋 Resumen de Seguridad - 6 Vulnerabilidades Cerradas
 
 | # | Elemento | Estado | Ubicación | Tipo |
-|---|---|---|---|---|
+|___|___|___|___|___|
 | 1 | **Agregar al carrito** (tarjetas) | ✅ Comentado | /shop | Botón de compra |
 | 2 | **Agregar al carrito** (detalles) | ✅ Comentado | /shop/producto-xxx | Botón de compra |
 | 3 | **Quick Reorder** | ✅ Oculto | /shop/cart | Atajo compra rápida |
@@ -171,7 +171,7 @@ tienda_web/
 
 **Resultado**: Los usuarios **SOLO pueden solicitar cotizaciones** a través del botón dedicado. Todos los caminos para comprar directamente han sido cerrados. 🔒
 
----
+___
 
 ## Notas Técnicas
 
@@ -180,7 +180,7 @@ tienda_web/
 - **JavaScript**: Se inyecta en cada página del sitio web mediante la plantilla `website.layout`
 - **Dependencias**: Requiere `website_sale` activo en Odoo
 
----
+___
 
 ## Soporte
 
