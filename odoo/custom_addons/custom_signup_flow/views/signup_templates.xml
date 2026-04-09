@@ -17,11 +17,7 @@
                     <p class="custom-signup-message">
                         <t t-esc="message"/>
                     </p>
-                    <div class="mt-4">
-                        <a href="/web/reset_password" class="custom-signup-btn">
-                            Activar mi cuenta <i class="fa fa-arrow-right ms-2"/>
-                        </a>
-                    </div>
+
                 </div>
             </div>
         </xpath>

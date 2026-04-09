@@ -59,7 +59,7 @@ class CustomAuthSignupHome(AuthSignupHome):
                 
                 # Si es un registro directo (sin token), mostramos mensaje de éxito con botón
                 if not qcontext.get('token'):
-                    qcontext['message'] = _("Revisá tu email para activar tu cuenta y crear tu contraseña.")
+                    qcontext['message'] = _("Revisá tu email %s para activar tu cuenta y crear tu contraseña.") % qcontext.get('login', '')
                     qcontext['signup_success'] = True
                     return request.render('auth_signup.signup', qcontext)
                 

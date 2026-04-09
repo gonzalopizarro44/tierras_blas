@@ -6,10 +6,13 @@
     'license': 'LGPL-3',
     'depends': [
         'base',
+        'portal',
+        'website',
     ],
 
     'data': [
         'security/groups.xml',
+        'views/portal_templates.xml',
     ],
 
     'installable': True,

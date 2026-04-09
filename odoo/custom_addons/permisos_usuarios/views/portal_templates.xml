@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="user_dropdown_reports" inherit_id="portal.user_dropdown">
+        <!-- Buscamos el enlace de 'Mi cuenta' para insertar antes que él -->
+        <xpath expr="//a[@href='/my/home']" position="before">
+            <t t-if="user_id.has_group('permisos_usuarios.group_administrador')">
+                <div class="dropdown-divider"/>
+                <div class="dropdown-header fw-bold text-dark small py-1">Reportes</div>
+                <a href="/compras" role="menuitem" class="dropdown-item ps-3 py-1">Compras</a>
+                <a href="/ventas" role="menuitem" class="dropdown-item ps-3 py-1">Ventas</a>
+                <a href="/inventario" role="menuitem" class="dropdown-item ps-3 py-1">Inventario</a>
+                <a href="/panel" role="menuitem" class="dropdown-item ps-3 py-1">Panel</a>
+                <div class="dropdown-divider"/>
+            </t>
+        </xpath>
+    </template>
+</odoo>
