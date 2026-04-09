@@ -8,11 +8,18 @@
         'base',
         'website',
         'website_sale',
+        'website_sale_wishlist',
         'product',
     ],
     'data': [
         'views/tienda_template.xml',
     ],
+    'assets': {
+        'web.assets_frontend': [
+            'tienda_web/static/src/css/tienda_web.css',
+            'tienda_web/static/src/js/tienda_whatsapp.js',
+        ],
+    },
     'installable': True,
     'application': False,
 }

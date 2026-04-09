@@ -1,379 +1,49 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data>
-
-        <!-- ═══════════════════════════════════════════════════════════════════════════
-             PERSONALIZACIÓN: Botones de acción en tarjetas de productos (/shop)
-             ═══════════════════════════════════════════════════════════════════════════
-             
-             CAMBIOS:
-             1. Reemplazamos el botón "Add to Cart" con "Solicitar cotización"
-             2. El botón original está comentado para poder reactivarlo fácilmente
-             
-             PLANTILLA HEREDADA: website_sale.shop_product_buttons
-             (Ubicación: /odoo/addons/website_sale/views/product_tile_templates.xml) -->
-        <template id="tienda_web_shop_product_buttons" inherit_id="website_sale.shop_product_buttons">
-            
-            <!-- Buscar y reemplazar el botón principal (Add to Cart) -->
-            <xpath expr="//button[contains(@class, 'o_wsale_product_btn_primary')]" position="replace">
-                
-                <!-- ═════════════════════════════════════════════════════════════════
-                     BOTÓN: SOLICITAR COTIZACIÓN (NUEVO) 
-                     ═════════════════════════════════════════════════════════════════ -->
-                <button type="button" 
-                        class="o_wsale_product_btn_primary btn btn-success"
-                        onclick="solicitarCotizacion(this)"
-                        title="Solicitar una cotización de este producto"
-                        aria-label="Request quote"
-                        t-att-data-product-id="product.id"
-                        t-att-data-product-name="product.name">
-                    <i class="fa fa-fw fa-envelope-open-o o_not-animable" role="presentation"/>
-                    <span class="o_label small ms-1">Solicitar cotización</span>
+    <template id="tienda_web_products_item_catalog" inherit_id="website_sale.products_item">
+        <xpath expr="//div[hasclass('product_price')]" position="attributes">
+            <attribute name="class" add="d-none" separator=" "/>
+        </xpath>
+        <xpath expr="//div[hasclass('o_wsale_product_btn')]" position="attributes">
+            <attribute name="class" add="d-none" separator=" "/>
+        </xpath>
+        <xpath expr="//div[hasclass('o_wsale_product_information')]" position="inside">
+            <div class="d-flex justify-content-center mt-2 px-2 pb-2">
+                <button type="button" class="btn btn-whatsapp-premium w-100" onclick="consultarWhatsApp(this)" t-att-data-product-name="product.name">
+                    <i class="fa fa-whatsapp me-1"/>
+                    <span class="small">Consultar WhatsApp</span>
                 </button>
-                
-                <!-- ═════════════════════════════════════════════════════════════════
-                     BOTÓN: AGREGAR AL CARRITO (COMENTADO - DESHABILITADO)
-                     ═════════════════════════════════════════════════════════════════
-                     
-                     Para reactivar el carrito, descomenta el siguiente botón y
-                     re-comenta el botón "Solicitar cotización" arriba.
-                     
-                    <button type="button"
-                            class="o_wsale_product_btn_primary a-submit btn btn-primary"
-                            aria-label="Add to cart"
-                            title="Add to cart"
-                            t-att-data-show-quantity="is_view_active('website_sale.product_quantity')">
-                        <i class="fa fa-fw fa-shopping-cart o_not-animable" role="presentation"/>
-                        <span class="o_label small ms-1">Add to Cart</span>
-                    </button>
-                     
-                -->
-                
-            </xpath>
-        </template>
+            </div>
+        </xpath>
+    </template>
 
-        <!-- ═══════════════════════════════════════════════════════════════════════════
-             PERSONALIZACIÓN: Botón "Add to Cart" en página de detalles del producto
-             ═══════════════════════════════════════════════════════════════════════════
-             
-             HEREDADA DE: website_sale.cta_wrapper
-             (Ubicación: /odoo/addons/website_sale/views/templates.xml:2315)
-        -->
-        
-        <template id="tienda_web_cta_wrapper" inherit_id="website_sale.cta_wrapper">
-            
-            <!-- Reemplazar el botón "Add to cart" en la página de detalles -->
-            <xpath expr="//a[@id='add_to_cart']" position="replace">
-                
-                <!-- ═════════════════════════════════════════════════════════════════
-                     BOTÓN: SOLICITAR COTIZACIÓN (NUEVO) 
-                     ═════════════════════════════════════════════════════════════════ -->
-                <a id="solicitar_cotizacion_detail" 
-                   role="button" 
-                   href="#" 
-                   onclick="return solicitarCotizacionDetail(event)"
-                   t-attf-class="btn btn-success js_check_product solicitar-cotizacion flex-grow-1"
-                   title="Solicitar una cotización de este producto"
-                   t-att-data-product-id="product.id"
-                   t-att-data-product-name="product.name">
-                    <i class="fa fa-envelope-open-o me-2"/>
-                    Solicitar cotización
+    <template id="tienda_web_product_catalog" inherit_id="website_sale.product">
+        <xpath expr="//div[@id='product_details']//t[@t-call='website_sale.product_price']" position="replace"/>
+        <xpath expr="//div[@id='product_details']//form[@action='/shop/cart/update']" position="attributes">
+            <attribute name="class" add="d-none" separator=" "/>
+        </xpath>
+        <xpath expr="//div[@id='product_details']//form[@action='/shop/cart/update']" position="after">
+            <div class="mt-4">
+                <a id="solicitar_whatsapp_detail" role="button" href="#" onclick="return consultarWhatsAppDetail(event)" class="btn btn-whatsapp-premium btn-lg w-100 animate-pulse-whatsapp d-flex align-items-center justify-content-center" t-att-data-product-name="product.name">
+                    <i class="fa fa-whatsapp fa-2x me-2"/>
+                    <div class="text-start">
+                        <span class="d-block fw-bold">Consultar por WhatsApp</span>
+                        <small class="d-block opacity-75">Respuesta inmediata</small>
+                    </div>
                 </a>
-                
-                <!-- ═════════════════════════════════════════════════════════════════
-                     BOTÓN: AGREGAR AL CARRITO (COMENTADO - DESHABILITADO)
-                     ═════════════════════════════════════════════════════════════════
-                     
-                     Para reactivar el carrito en la página de detalles, descomenta:
-                     
-                    <a id="add_to_cart"
-                       role="button"
-                       href="#"
-                       t-attf-class="btn btn-primary js_check_product a-submit flex-grow-1"
-                       t-att-data-show-quantity="is_view_active('website_sale.product_quantity')"
-                       data-animation-selector=".o_wsale_product_images">
-                        <i class="fa fa-shopping-cart me-2"/>
-                        Add to cart
-                    </a> -->
-            </xpath>
-        </template>
-        <!-- ═══════════════════════════════════════════════════════════════════════════
-             PERSONALIZACIÓN: Ocultar botón "Quick Reorder" 
-             ═══════════════════════════════════════════════════════════════════════════
-             
-             MOTIVO: Este botón permitía acceder al carrito (/shop/cart) y listar
-             productos, lo cual es una vulnerabilidad de seguridad. Como la política
-             es que los usuarios SOLO puedan solicitar cotizaciones (no comprar 
-             directamente), este botón debe estar deshabilitado.
-             
-             HEREDADA DE: website_sale.quick_reorder_button
-             (Ubicación: /odoo/addons/website_sale/views/templates.xml:3124) -->
-        <template id="tienda_web_quick_reorder_button" inherit_id="website_sale.quick_reorder_button">
-            <!-- Reemplazar todo el contenido con un comentario deshabilitado -->
-            <xpath expr="//span[@t-att-title='quick_reorder_button_title']" position="replace">
-                
-                <!-- ═════════════════════════════════════════════════════════════════
-                     BOTÓN: QUICK REORDER (DESHABILITADO Y OCULTO)
-                     ═════════════════════════════════════════════════════════════════
-                     
-                     This button has been disabled for security reasons.
-                     Users are only allowed to request quotes, not purchase directly.
-                     
-                     If you need to reactivate it, uncomment the following code:
-                    
-                    <span t-att-title="quick_reorder_button_title">
-                        <button
-                            id="quick_reorder_button"
-                            type="button"
-                            class="btn btn-sm btn-link"
-                            data-bs-toggle="offcanvas"
-                            data-bs-target="#quick_reorder_sidebar"
-                            aria-controls="quick_reorder_sidebar"
-                            t-att-disabled="not order_history"
-                        >
-                            <i class="fa fa-rotate-left me-2"/>Quick reorder
-                        </button>
-                    </span> -->
-            </xpath>
-        </template>
+            </div>
+        </xpath>
+    </template>
 
-        <!-- ═══════════════════════════════════════════════════════════════════════════
-             PERSONALIZACIÓN: Ocultar product_option_block en página de detalles
-             ═══════════════════════════════════════════════════════════════════════════
-             
-             MOTIVO: Este div contiene botones adicionales de opciones de producto
-             que permitirían agregar al carrito. Debe estar oculto para forzar que
-             los usuarios SOLO soliciten cotizaciones.
-             
-             HEREDADA DE: website_sale.cta_wrapper
-             (Ubicación: /odoo/addons/website_sale/views/templates.xml:2339)
-        -->
-        
-        <template id="tienda_web_hide_product_option_block" inherit_id="website_sale.cta_wrapper">
-            
-            <!-- Ocultar elemento product_option_block -->
-            <xpath expr="//div[@id='product_option_block']" position="attributes">
-                <attribute name="class" add="d-none" separator=" "/>
-            </xpath>
-        </template>
+    <template id="tienda_web_hide_wishlist" inherit_id="website_sale_wishlist.product_add_to_wishlist">
+        <xpath expr="//a[hasclass('o_add_wishlist')]" position="attributes">
+            <attribute name="class" add="d-none" separator=" "/>
+        </xpath>
+    </template>
 
-        <!-- ═══════════════════════════════════════════════════════════════════════════
-             PERSONALIZACIÓN: Ocultar botón "Add to Cart" en lista de deseos (wishlist)
-             ═══════════════════════════════════════════════════════════════════════════
-             
-             MOTIVO: En la lista de deseos (/shop/wishlist), los productos aparecen
-             con un botón "Add to Cart" que permite comprar directamente. Esto es
-             una vulnerabilidad de seguridad. Solo deben solicitar cotizaciones.
-             
-             HEREDADA DE: website_sale_wishlist.wishlist_page
-             (Ubicación: /odoo/addons/website_sale_wishlist/views/website_sale_wishlist_template.xml:~350)
-        -->
-        
-        <template id="tienda_web_hide_wishlist_add_to_cart" inherit_id="website_sale_wishlist.product_wishlist">
-            
-            <!-- Buscar y reemplazar el botón "Add to Cart" en wishlist -->
-            <xpath expr="//button[@id='add_to_cart_button']" position="replace">
-                
-                <!-- ═════════════════════════════════════════════════════════════════
-                     BOTÓN: ADD TO CART EN WISHLIST (DESHABILITADO Y OCULTO)
-                     ═════════════════════════════════════════════════════════════════
-                     
-                     This button has been disabled for security reasons.
-                     Users are only allowed to request quotes, not purchase directly.
-                     
-                     If you need to reactivate it, uncomment the following code:
-                    
-                    <button
-                        t-else=""
-                        id="add_to_cart_button"
-                        type="button"
-                        class="o_wsale_product_btn_primary btn btn-primary o_wish_add"
-                        t-att-data-show-quantity="is_view_active('website_sale.product_quantity')"
-                        t-att-data-product-template-id="product.id"
-                        t-att-data-product-product-id="product_variant.id"
-                        t-att-data-product-type="product.type"
-                        t-att-data-ptav-ids="json.dumps(product_variant.product_template_attribute_value_ids.ids)"
-                    >
-                        <i
-                            class="fa fa-fw fa-shopping-cart o_not-animable"
-                            role="presentation"
-                        />
-                        <span class="o_label small ms-1">Add to Cart</span>
-                    </button>
-                     
-                -->
-                
-            </xpath>
-        </template>
-
-        <!-- ═══════════════════════════════════════════════════════════════════════════
-             PERSONALIZACIÓN: Ocultar botón "Add to Wishlist" en página de detalles
-             ═══════════════════════════════════════════════════════════════════════════
-             
-             MOTIVO: El botón de wishlist en la página de detalles no es tan crítico
-             como los demás, pero se ocultó por consistencia y para simplificar
-             la interfaz. Los usuarios SOLO pueden solicitar cotizaciones.
-             
-             NOTA: El botón de wishlist en tarjetas ya fue comentado manualmente
-             por el usuario.
-        -->
-        
-        <template id="tienda_web_hide_wishlist_button" inherit_id="website_sale_wishlist.product_add_to_wishlist">
-            
-            <!-- Buscar y ocultar el botón "Add to Wishlist" -->
-            <xpath expr="//a[@data-action='o_wishlist']" position="replace">
-                
-                <!-- ═════════════════════════════════════════════════════════════════
-                     BOTÓN: ADD TO WISHLIST EN DETALLES (DESHABILITADO Y OCULTO)
-                     ═════════════════════════════════════════════════════════════════
-                     
-                     This button has been disabled for UX simplification.
-                     Users are only allowed to request quotes through the dedicated button.
-                     
-                    
-                    <a
-                        t-if="product_variant"
-                        t-att-class="_button_classes"
-                        t-att-disabled="in_wish"
-                        t-att-data-product-template-id="product.id"
-                        t-att-data-product-product-id="product_variant.id"
-                        data-action="o_wishlist"
-                        title="Add to wishlist"
-                    >
-                        <i class="fa fa-heart-o me-2 me-lg-0" role="img" aria-label="Add to wishlist"/>
-                        <span class="d-inline">Add to wishlist</span>
-                    </a>
-                     
-                -->
-                
-            </xpath>
-        </template>
-
-        <!-- ═══════════════════════════════════════════════════════════════════════════
-             SCRIPT: Gestor de solicitud de cotización
-             ═══════════════════════════════════════════════════════════════════════════
-        -->
-        <template id="tienda_web_quotation_script" inherit_id="website.layout">
-            <xpath expr="//body" position="inside">
-                <script type="text/javascript">
-                    <![CDATA[
-                    /**
-                     * ─────────────────────────────────────────────────────────────
-                     * FUNCIÓN: solicitarCotizacion(element)
-                     * ─────────────────────────────────────────────────────────────
-                     * 
-                     * Gestiona la solicitud de cotización desde tarjetas de producto.
-                     * (Se ejecuta cuando haces click en el botón en /shop)
-                     * 
-                     * COMPORTAMIENTO ACTUAL:
-                     * - Muestra una alerta con el nombre del producto
-                     * - Redirige al bot de Martín cuando tengas el nº de WhatsApp
-                     * 
-                     * CONFIGURACIÓN PENDIENTE:
-                     * 1. Reemplaza MARTIN_WHATSAPP_NUMBER con el número real
-                     * 2. Descomenta window.open(urlBot, '_blank')
-                     */
-                    function solicitarCotizacion(element) {
-                        // ─────────────────────────────────────────────────────
-                        // OBTENER DATOS DEL PRODUCTO
-                        // ─────────────────────────────────────────────────────
-                        const productName = element.getAttribute('data-product-name');
-                        const productId = element.getAttribute('data-product-id');
-                        
-                        // ─────────────────────────────────────────────────────
-                        // CONFIGURACIÓN: Número de WhatsApp de Martín
-                        // ─────────────────────────────────────────────────────
-                        // TODO: Reemplazar "" con el número de Martín
-                        // Formato: "34666666666" (código país + número sin +)
-                        const MARTIN_WHATSAPP_NUMBER = "";
-                        
-                        // ─────────────────────────────────────────────────────
-                        // CONSTRUIR MENSAJE Y URL
-                        // ─────────────────────────────────────────────────────
-                        const mensaje = `Hola, estoy interesado en la siguiente cotización:\n\n` +
-                                       `Producto: ${productName}\n\n` +
-                                       `Me gustaría recibir más información.`;
-                        
-                        const urlBot = 'https://api.whatsapp.com/send/?phone=' + MARTIN_WHATSAPP_NUMBER + 
-                                       '&text=' + encodeURIComponent(mensaje);
-                        
-                        // ─────────────────────────────────────────────────────
-                        // COMPORTAMIENTO TEMPORAL (sin número de WhatsApp)
-                        // ─────────────────────────────────────────────────────
-                        if (MARTIN_WHATSAPP_NUMBER === "") {
-                            // Mostrar alerta temporal 
-                            alert('📋 Solicitud de cotización recibida:\n\n' +
-                                  '✅ Producto: ' + productName + '\n\n' +
-                                  '⏳ Cuando tengas el número de Martín, ' +
-                                  'serás redirigido automáticamente a WhatsApp');
-                        } else {
-                            // Cuando tengas el número, abre WhatsApp directamente
-                            // TODO: Descomentar esta línea
-                            // window.open(urlBot, '_blank');
-                        }
-                    }
-
-                    /**
-                     * ─────────────────────────────────────────────────────────────
-                     * FUNCIÓN: solicitarCotizacionDetail(event)
-                     * ─────────────────────────────────────────────────────────────
-                     * 
-                     * Gestiona la solicitud de cotización desde página de detalles.
-                     * (Se ejecuta cuando haces click en el botón en /shop/producto-xxx)
-                     * 
-                     * Similar a solicitarCotizacion() pero optimizada para la página
-                     * de detalles donde el producto ya está cargado en el DOM.
-                     */
-                    function solicitarCotizacionDetail(event) {
-                        // Prevenir el comportamiento por defecto del link
-                        event.preventDefault();
-                        
-                        // ─────────────────────────────────────────────────────
-                        // OBTENER DATOS DEL PRODUCTO DESDE EL BOTÓN
-                        // ─────────────────────────────────────────────────────
-                        const button = event.currentTarget;
-                        const productName = button.getAttribute('data-product-name');
-                        const productId = button.getAttribute('data-product-id');
-                        
-                        // ─────────────────────────────────────────────────────
-                        // CONFIGURACIÓN: Número de WhatsApp de Martín
-                        // ─────────────────────────────────────────────────────
-                        // TODO: Reemplazar "" con el número de Martín
-                        // Formato: "34666666666" (código país + número sin +)
-                        const MARTIN_WHATSAPP_NUMBER = "";
-                        
-                        // ─────────────────────────────────────────────────────
-                        // CONSTRUIR MENSAJE Y URL
-                        // ─────────────────────────────────────────────────────
-                        const mensaje = `Hola, estoy interesado en la siguiente cotización:\n\n` +
-                                       `Producto: ${productName}\n\n` +
-                                       `Me gustaría recibir más información.`;
-                        
-                        const urlBot = 'https://api.whatsapp.com/send/?phone=' + MARTIN_WHATSAPP_NUMBER + 
-                                       '&text=' + encodeURIComponent(mensaje);
-                        
-                        // ─────────────────────────────────────────────────────
-                        // COMPORTAMIENTO TEMPORAL (sin número de WhatsApp)
-                        // ─────────────────────────────────────────────────────
-                        if (MARTIN_WHATSAPP_NUMBER === "") {
-                            // Mostrar alerta temporal 
-                            alert('📋 Solicitud de cotización recibida:\n\n' +
-                                  '✅ Producto: ' + productName + '\n\n' +
-                                  '⏳ Cuando tengas el número de Martín, ' +
-                                  'serás redirigido automáticamente a WhatsApp');
-                        } else {
-                            // Cuando tengas el número, abre WhatsApp directamente
-                            // TODO: Descomentar esta línea
-                            // window.open(urlBot, '_blank');
-                        }
-                        
-                        // Retornar false para evitar comportamiento del link
-                        return false;
-                    }
-                    ]]>
-                </script>
-            </xpath>
-        </template>
-
-    </data>
+    <template id="tienda_web_hide_quick_reorder" inherit_id="website_sale.quick_reorder_button" optional="enabled">
+        <xpath expr="//button" position="attributes">
+            <attribute name="class" add="d-none" separator=" "/>
+        </xpath>
+    </template>
 </odoo>
