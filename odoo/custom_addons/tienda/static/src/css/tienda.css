@@ -3,124 +3,145 @@
    Basado en la estética corporativa de Tierras Blas
 */
 :root {
-    --primary: #235225;
-    --secondary: #D3D3D4;
-    --light: #FAFAFA;
-    --dark: #171C1C;
-    --bg-body: #FAFAFA;
-    --card-bg: #FFFFFF;
-    --radius-card: 1rem;
-    /* --border-radius-xl */
-    --shadow-base: 0px 4px 16px rgba(0, 0, 0, 0.08);
-    --shadow-hover: 0px 12px 32px rgba(0, 0, 0, 0.12);
-    --font-inter: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --brand-primary: #166534;
+    --brand-primary-dark: #0f4620;
+    --brand-light: #dcfce7;
+    --brand-secondary: #6b7280;
+    --brand-bg: #f9fafb;
+    --brand-card: #ffffff;
+    --brand-border: #e5e7eb;
+    --brand-text: #1f2937;
+    --brand-text-muted: #6b7280;
+    --brand-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+    --brand-shadow-lg: 0 4px 6px rgba(0, 0, 0, .1);
+    --brand-radius: 0.75rem;
+    --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 body {
+    background: var(--brand-bg);
     font-family: var(--font-inter);
-    background-color: var(--bg-body);
-    color: #212529;
+    color: var(--brand-text);
 }
 
-/* Hero Section */
-.s_title {
-    background-color: var(--card-bg) !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+/* Panel-like Header */
+.tienda-header {
+    background: transparent;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
 }
 
-.text-primary {
-    color: var(--primary) !important;
+.tienda-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--brand-text);
+    margin: 0;
 }
 
-.border-primary {
-    border-color: var(--primary) !important;
+.tienda-subtitle {
+    font-size: 0.9rem;
+    color: var(--brand-text-muted);
+    margin-top: 0.25rem;
 }
 
-/* Product Card */
+/* Product Card - Matching panel-card / metric-card */
 .product-card {
-    background-color: var(--card-bg);
-    border-radius: var(--radius-card);
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
-    box-shadow: var(--shadow-base);
+    background: var(--brand-card);
+    border: 1px solid var(--brand-border);
+    border-radius: var(--brand-radius);
+    box-shadow: var(--brand-shadow);
     overflow: hidden;
+    transition: all 0.3s ease;
     height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .product-card:hover {
-    transform: translateY(-5px);
-    box-shadow: var(--shadow-hover);
+    transform: translateY(-4px);
+    box-shadow: var(--brand-shadow-lg);
+    border-color: var(--brand-primary);
 }
 
 /* Image handling */
-.product-card .position-relative {
+.product-img-container {
+    height: 315px;
     overflow: hidden;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.product-card .card-img-top {
-    border-top-left-radius: var(--radius-card);
-    border-top-right-radius: var(--radius-card);
-    transition: transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-    transform: scale(1.04);
-    /* Inicia un poco más grande según variables de Odoo */
+.product-img-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
 }
 
-.product-card:hover .card-img-top {
-    transform: scale(1);
-    /* Efecto de "enfoque" al achicarse suavemente */
+.product-card:hover .product-img-container img {
+    transform: scale(1.05);
 }
 
 /* Card Body */
-.card-body {
-    padding: 1.15rem !important;
+.product-card-body {
+    padding: 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }
 
-.card-title {
-    font-family: "Inter Tight", sans-serif;
-    font-weight: 700;
+.product-name {
     font-size: 1.1rem;
-    color: var(--dark);
+    font-weight: 600;
+    color: var(--brand-text);
     margin-bottom: 0.5rem;
+    line-height: 1.3;
 }
 
-.card-text {
-    font-size: 0.85rem;
-    color: #646669;
-    line-height: 1.5;
+.product-description {
+    font-size: 0.875rem;
+    color: var(--brand-text-muted);
+    margin-bottom: 1.5rem;
+    flex-grow: 1;
 }
 
-/* WhatsApp Button */
+/* WhatsApp Button - Matching btn-primary look */
 .btn-whatsapp-catalog {
-    border-radius: 2rem;
-    /* --btn-border-radius-lg */
-    padding: 0.6rem 1rem;
-    font-weight: 700;
-    font-size: 0.85rem;
-    border: 2px solid var(--primary);
-    color: var(--primary);
-    background-color: transparent;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    background: var(--brand-primary);
+    border: none;
+    color: white !important;
+    padding: 0.75rem 1rem;
+    border-radius: var(--brand-radius);
+    font-weight: 600;
+    font-size: 0.9rem;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
 }
 
 .btn-whatsapp-catalog:hover {
-    background-color: var(--primary);
-    color: #FFFFFF !important;
-    border-color: var(--primary);
-    transform: scale(1.02);
+    background: var(--brand-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .btn-whatsapp-catalog i {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-    .display-4 {
-        font-size: 2.5rem;
+    .tienda-header {
+        padding: 1.5rem 1rem;
+        text-align: center;
     }
 
-    .card-body {
-        padding: 1.25rem !important;
+    .tienda-title {
+        font-size: 1.5rem;
     }
 }
