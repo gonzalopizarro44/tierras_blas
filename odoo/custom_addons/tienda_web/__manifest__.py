@@ -20,6 +20,6 @@
             'tienda_web/static/src/js/tienda_whatsapp.js',
         ],
     },
-    'installable': True,
+    'installable': False,
     'application': False,
 }
