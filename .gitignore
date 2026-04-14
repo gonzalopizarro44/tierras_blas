@@ -8,6 +8,9 @@ odoo/odoo/
 # Mantener addons propios
 !odoo/custom_addons/
 
+# 3. No ignores el archivo de configuración de Docker
+!docker-compose.yml
+
 # Runtime
 odoo/filestore/
 odoo/sessions/

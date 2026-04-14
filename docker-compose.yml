@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: tierras_blas_db
+    environment:
+      POSTGRES_DB: odoo
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: always
+    networks:
+      - odoo_network
+
+  odoo:
+    image: odoo:19.0  # OJO: Odoo 19 es muy nuevo, si en local usas 18 pon 18.0
+    container_name: tierras_blas_odoo
+    depends_on:
+      - db
+    ports:
+      - "8070:8069"
+    volumes:
+      # AQUÍ CORREGIMOS LA RUTA PARA QUE LEA TUS MÓDULOS
+      - ./odoo/custom_addons:/mnt/extra-addons
+      - ./config/odoo.conf:/etc/odoo/odoo.conf
+      - ./logs:/var/log/odoo
+      - ./data:/var/lib/odoo
+    restart: always
+    networks:
+      - odoo_network
+
+volumes:
+  db_data:
+
+networks:
+  odoo_network:
