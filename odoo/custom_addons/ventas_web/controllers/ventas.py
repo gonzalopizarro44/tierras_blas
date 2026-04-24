@@ -163,7 +163,7 @@ class VentasController(http.Controller):
             order='name asc'
         )
         journals = request.env['account.journal'].sudo().search(
-            [('type', '=', 'sale')],
+            [('type', 'in', ['sale', 'cash', 'bank'])],
             order='name asc'
         )
 

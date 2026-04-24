@@ -365,11 +365,15 @@
                                 <label class="nv-label">Seleccionar Método</label>
                                 <select id="paymentMethodSelect" class="form-select">
                                     <option value="">-- Sin especificar --</option>
+                                    <!-- Diario Real -->
                                     <t t-foreach="journals" t-as="j">
-                                        <option t-att-value="j.id">
-                                            <t t-esc="j.name"/>
+                                        <option t-if="'efectivo' in j.name.lower()" t-att-value="j.id">
+                                            Efectivo
                                         </option>
                                     </t>
+                                    <!-- Opciones Visuales / Fake -->
+                                    <option value="estetico_transferencia">Transferencia</option>
+                                    <option value="estetico_qr">QR</option>
                                 </select>
                             </div>
                         </div>
