@@ -136,18 +136,14 @@ class PanelService(models.AbstractModel):
         total_compras = len(compras)
         gastos = sum(compras.mapped('amount_total'))
         
-        # INVENTARIO - Usar qty_available para máxima precisión en productos activos
-        product_domain = [('active', '=', True), ('type', '=', 'product')]
+        # INVENTARIO - Total de productos activos y métricas de stock
         total_productos = Product.search_count([('active', '=', True)])
         
-        # Productos sin stock (cantidad == 0)
-        productos_sin_stock = Product.search_count(product_domain + [('qty_available', '=', 0)])
+        # Productos sin stock (cantidad == 0) - Usamos el helper unificado centralizado
+        productos_sin_stock = len(self._obtener_productos_sin_stock_records())
         
-        # Productos con stock bajo (0 < cantidad < umbral)
-        productos_bajo_stock = Product.search_count(product_domain + [
-            ('qty_available', '>', 0), 
-            ('qty_available', '<', self.STOCK_THRESHOLD)
-        ])
+        # Productos con stock bajo (0 < cantidad < umbral) - Usamos el helper unificado
+        productos_bajo_stock = len(self._obtener_productos_bajo_stock_records())
         
         return {
             'total_ventas': total_ventas,
@@ -363,12 +359,8 @@ class PanelService(models.AbstractModel):
         """Genera alerta si hay productos sin stock."""
         Product = self.env['product.product'].sudo()
         
-        # Contar productos activos (congelado/almacenable) con stock == 0
-        sin_stock_count = Product.search_count([
-            ('active', '=', True), 
-            ('type', '=', 'product'), 
-            ('qty_available', '=', 0)
-        ])
+        # Contar productos activos (congelado/almacenable) con stock == 0 usando nuestro helper centralizado
+        sin_stock_count = len(self._obtener_productos_sin_stock_records())
         
         if sin_stock_count > 0:
             return [{
@@ -382,15 +374,8 @@ class PanelService(models.AbstractModel):
     @api.model
     def _generar_alerta_stock_bajo(self):
         """Genera alerta si hay productos con stock bajo."""
-        Product = self.env['product.product'].sudo()
-        
-        # Contar productos activos (congelado/almacenable) con 0 < stock < umbral
-        bajo_stock_count = Product.search_count([
-            ('active', '=', True), 
-            ('type', '=', 'product'), 
-            ('qty_available', '>', 0), 
-            ('qty_available', '<', self.STOCK_THRESHOLD)
-        ])
+        # Contar productos activos (congelado/almacenable) con 0 < stock < umbral usando helper
+        bajo_stock_count = len(self._obtener_productos_bajo_stock_records())
         
         if bajo_stock_count > 0:
             return [{
@@ -535,6 +520,45 @@ class PanelService(models.AbstractModel):
     # ═════════════════════════════════════════════════════════════════════════
 
     @api.model
+    def _obtener_productos_sin_stock_records(self):
+        """
+        Helper centralizado para obtener productos que ÚNICAMENTE tienen stock = 0.
+        Maneja una sola información para las métricas y los detalles.
+        Filtra en Python para garantizar precisión (incluye productos que nunca tuvieron un movimiento de stock).
+
+        NOTA Odoo 19: El campo 'type' en product.product ya no distingue almacenables
+        con el valor 'product'. Se excluyen solo servicios puros ('service') que no
+        tienen inventario físico.
+        """
+        Product = self.env['product.product'].sudo()
+        # Excluimos servicios puros; incluimos almacenables y consumibles con stock real
+        domain = [('active', '=', True), ('type', '!=', 'service')]
+        todos_productos = Product.search(domain, order='name ASC')
+
+        # Filtramos exactamente 0 (ni negativo, ni mayor a 0)
+        productos_sin_stock = todos_productos.filtered(lambda p: p.qty_available == 0)
+        return productos_sin_stock
+
+    @api.model
+    def _obtener_productos_bajo_stock_records(self):
+        """
+        Helper centralizado para obtener productos con stock bajo (0 < cantidad < umbral).
+        Odoo no soporta ORDER BY en la BD para campos no almacenados como qty_available,
+        por lo que ordenamos y filtramos en Python de manera segura.
+
+        NOTA Odoo 19: El campo 'type' en product.product ya no distingue almacenables
+        con el valor 'product'. Se excluyen solo servicios puros ('service').
+        """
+        Product = self.env['product.product'].sudo()
+        # Excluimos servicios puros; incluimos almacenables y consumibles con stock real
+        domain = [('active', '=', True), ('type', '!=', 'service')]
+        todos_productos = Product.search(domain)
+
+        productos_bajo_stock = todos_productos.filtered(lambda p: 0 < p.qty_available < self.STOCK_THRESHOLD)
+        # Ordenar por cantidad ascendente y luego por nombre
+        return productos_bajo_stock.sorted(key=lambda p: (p.qty_available, p.name))
+
+    @api.model
     def obtener_productos_sin_stock(self, page=1, limit=10):
         """
         Obtiene lista paginada de productos sin stock.
@@ -555,11 +579,9 @@ class PanelService(models.AbstractModel):
         Returns:
             dict: {total: int, items: list, page: int, limit: int, total_pages: int}
         """
-        Product = self.env['product.product'].sudo()
-        
         # PASO 1: Buscar productos activos tipo 'congelado/almacenable' con stock 0
-        domain = [('active', '=', True), ('type', '=', 'product'), ('qty_available', '=', 0)]
-        sin_stock_total = Product.search(domain, order='name ASC')
+        # Usamos el helper unificado (una sola fuente de información)
+        sin_stock_total = self._obtener_productos_sin_stock_records()
         total = len(sin_stock_total)
         
         _logger.info(f"[PANEL] sin_stock: Encontrados {total} productos con cantidad = 0")
@@ -610,14 +632,8 @@ class PanelService(models.AbstractModel):
         """
         Product = self.env['product.product'].sudo()
         
-        # PASO 1: Buscar productos con stock entre 1 y umbral-1
-        domain = [
-            ('active', '=', True), 
-            ('type', '=', 'product'), 
-            ('qty_available', '>', 0), 
-            ('qty_available', '<', self.STOCK_THRESHOLD)
-        ]
-        bajo_stock_products = Product.search(domain, order='qty_available ASC, name ASC')
+        # PASO 1: Buscar productos con stock entre 1 y umbral-1 usando nuestro helper unificado
+        bajo_stock_products = self._obtener_productos_bajo_stock_records()
         total = len(bajo_stock_products)
         
         _logger.info(f"[PANEL] bajo_stock: Encontrados {total} productos con 0<stock<{self.STOCK_THRESHOLD}")
