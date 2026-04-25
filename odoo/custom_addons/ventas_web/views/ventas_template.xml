@@ -184,6 +184,37 @@
                     display: block;
                     color: #adb5bd;
                 }
+
+                /* ESTILOS PARA DESGLOSE DE PRODUCTOS */
+                .product-line-row {
+                    display: flex;
+                    align-items: baseline;
+                    height: 1.4rem;
+                    margin-bottom: 2px;
+                }
+                .product-line-name {
+                    white-space: nowrap;
+                    font-size: 0.8rem;
+                    color: var(--brand-text);
+                    padding-right: 0.5rem;
+                    flex-shrink: 0;
+                }
+                .product-line-filler {
+                    flex-grow: 1;
+                    border-bottom: 1px dotted #cbd5e1;
+                    height: 1px;
+                    margin-bottom: 4px;
+                }
+                .product-line-qty {
+                    height: 1.4rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-end;
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                    color: var(--brand-primary);
+                    margin-bottom: 2px;
+                }
             </style>
 
             <div class="sales-page">
@@ -284,6 +315,7 @@
                                             <th>Cantidad</th>
                                             <th>Total</th>
                                             <th>Estado</th>
+                                            <th>Método de Pago</th>
                                             <th>Origen</th>
                                             <th>Fecha</th>
                                             <th>Acciones</th>
@@ -302,17 +334,23 @@
                                                     <t t-esc="venta.partner_id.name"/>
                                                 </td>
 
-                                                <!-- Productos (resumen) -->
-                                                <td>
+                                                <!-- Productos con línea punteada -->
+                                                <td style="min-width: 200px;">
                                                     <t t-foreach="venta.order_line" t-as="linea">
-                                                        <small><t t-esc="linea.product_id.name"/></small><br/>
+                                                        <div class="product-line-row">
+                                                            <span class="product-line-name"><t t-esc="linea.product_id.name"/></span>
+                                                            <span class="product-line-filler"></span>
+                                                        </div>
                                                     </t>
                                                 </td>
 
-                                                <!-- Cantidad total -->
-                                                <td>
-                                                    <t t-set="qty_total" t-value="sum(venta.order_line.mapped('product_uom_qty'))"/>
-                                                    <t t-esc="'%.2f' % qty_total"/>
+                                                <!-- Cantidades desglosadas -->
+                                                <td class="text-end">
+                                                    <t t-foreach="venta.order_line" t-as="linea">
+                                                        <div class="product-line-qty">
+                                                            <t t-esc="'%g' % linea.product_uom_qty"/>
+                                                        </div>
+                                                    </t>
                                                 </td>
 
                                                 <!-- Total (monto) -->
@@ -334,6 +372,11 @@
                                                     <t t-else="">
                                                         <span class="sales-badge badge-draft"><t t-esc="venta.state"/></span>
                                                     </t>
+                                                </td>
+
+                                                <!-- Método de Pago -->
+                                                <td>
+                                                    <t t-esc="venta.journal_id.name"/>
                                                 </td>
 
                                                 <!-- Origen -->
