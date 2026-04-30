@@ -142,9 +142,9 @@ class VentasController(http.Controller):
         Formulario para crear una nueva orden de venta.
         
         Carga:
-        - Clientes (res.partner) con customer_rank > 0
         - Productos (product.product) con sale_ok = True
         - Métodos de pago (account.journal) tipo 'sale'
+        - Clientes se cargan dinámicamente via AJAX (/ventas/buscar_clientes)
         
         Returns:
             http.Response: Página HTML del formulario
@@ -154,10 +154,6 @@ class VentasController(http.Controller):
             return request.redirect('/')
 
         # ── Obtener datos necesarios ──
-        clientes = request.env['res.partner'].sudo().search(
-            [('customer_rank', '>', 0)],
-            order='name asc'
-        )
         productos = request.env['product.product'].sudo().search(
             [('sale_ok', '=', True)],
             order='name asc'
@@ -197,12 +193,80 @@ class VentasController(http.Controller):
             })
 
         ctx = {
-            'clientes': clientes,
             'productos': productos_formateados,
             'journals': journals,
         }
 
         return request.render('ventas_web.nueva_venta_template', ctx)
+
+    # ═════════════════════════════════════════════════════════════════════════
+    # RUTA POST: /ventas/buscar_clientes - Buscar clientes en tiempo real
+    # ═════════════════════════════════════════════════════════════════════════
+
+    @http.route('/ventas/buscar_clientes', type='jsonrpc', auth='user', website=True, methods=['POST'])
+    def buscar_clientes(self, term='', limit=30):
+        """
+        Busca clientes en tiempo real para el autocompletado.
+        
+        Busca en TODOS los res.partner (no solo customer_rank > 0)
+        para que aparezcan usuarios recién registrados.
+        
+        Parámetros (JSON-RPC):
+        - term: Texto de búsqueda (nombre o DNI/VAT)
+        - limit: Cantidad máxima de resultados (default: 30)
+        
+        Returns:
+            dict: {
+                'success': bool,
+                'clientes': [{'id': int, 'name': str, 'vat': str}, ...],
+                'total': int
+            }
+        """
+        # ── Validar permisos ──
+        if not self._check_permissions():
+            return {'success': False, 'message': 'No tiene permisos.'}
+
+        # ── Construir dominio de búsqueda ──
+        domain = [
+            ('is_company', '=', False),  # Solo personas (no empresas)
+            ('type', '=', 'contact'),    # Solo contactos principales
+        ]
+
+        if term:
+            term = term.strip()
+            domain += [
+                '|',
+                ('name', 'ilike', term),
+                ('vat', 'ilike', term),
+            ]
+
+        # ── Buscar clientes ──
+        Partner = request.env['res.partner'].sudo()
+        total = Partner.search_count(domain)
+        clientes = Partner.search(
+            domain,
+            order='name asc',
+            limit=int(limit)
+        )
+
+        # ── Formatear resultados ──
+        resultado = []
+        for c in clientes:
+            label = c.name
+            if c.vat:
+                label += ' (' + c.vat + ')'
+            resultado.append({
+                'id': c.id,
+                'name': c.name,
+                'vat': c.vat or '',
+                'label': label,
+            })
+
+        return {
+            'success': True,
+            'clientes': resultado,
+            'total': total,
+        }
 
     # ═════════════════════════════════════════════════════════════════════════
     # RUTA POST: /ventas/crear_cliente - Crear cliente rápidamente

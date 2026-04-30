@@ -616,6 +616,14 @@
                         return;
                     }
 
+                    // Validar método de pago obligatorio
+                    const paymentSelect = document.getElementById('paymentMethodSelect');
+                    if (!paymentSelect.value) {
+                        alert('Selecciona un método de pago');
+                        paymentSelect.focus();
+                        return;
+                    }
+
                     const btn = event.target;
                     const txtBtn = btn.innerText;
                     btn.disabled = true;
@@ -666,7 +674,14 @@
 
                 // Escucha cambios en el método de pago
                 document.getElementById('paymentMethodSelect').addEventListener('change', function() {
-                    ventaData.journal_id = this.value ? parseInt(this.value) : null;
+                    const val = this.value;
+                    if (!val) {
+                        ventaData.journal_id = null;
+                    } else if (!isNaN(val)) {
+                        ventaData.journal_id = parseInt(val);
+                    } else {
+                        ventaData.journal_id = val; // valor estético (string)
+                    }
                 });
 
             </script>

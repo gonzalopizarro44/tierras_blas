@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
     <template id="compras_template" name="Panel de Compras">
 
@@ -94,9 +94,14 @@
                 .compras-table tbody td {
                     padding: 0.75rem;
                     border-color: var(--brand-border);
-                    vertical-align: middle;
+                    vertical-align: top;
                     color: var(--brand-text);
                     font-size: 0.9rem;
+                    white-space: nowrap;
+                }
+
+                .compras-table tbody td.col-products {
+                    white-space: normal;
                 }
 
                 .compras-table tbody tr:hover {
@@ -181,6 +186,37 @@
                     margin-bottom: 1rem;
                     display: block;
                     color: #adb5bd;
+                }
+
+                /* ESTILOS PARA DESGLOSE DE PRODUCTOS */
+                .product-line-row {
+                    display: flex;
+                    align-items: baseline;
+                    height: 1.4rem;
+                    margin-bottom: 2px;
+                }
+                .product-line-name {
+                    white-space: nowrap;
+                    font-size: 0.8rem;
+                    color: var(--brand-text);
+                    padding-right: 0.5rem;
+                    flex-shrink: 0;
+                }
+                .product-line-filler {
+                    flex-grow: 1;
+                    border-bottom: 1px dotted #cbd5e1;
+                    height: 1px;
+                    margin-bottom: 4px;
+                }
+                .product-line-qty {
+                    height: 1.4rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-start;
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                    color: var(--brand-primary);
+                    margin-bottom: 2px;
                 }
             </style>
 
@@ -289,17 +325,23 @@
                                                     <t t-esc="compra.partner_id.name"/>
                                                 </td>
 
-                                                <!-- Productos (resumen) -->
-                                                <td>
+                                                <!-- Productos con línea punteada -->
+                                                <td class="col-products" style="min-width: 200px;">
                                                     <t t-foreach="compra.order_line" t-as="linea">
-                                                        <small><t t-esc="linea.product_id.name"/></small><br/>
+                                                        <div class="product-line-row">
+                                                            <span class="product-line-name"><t t-esc="linea.product_id.name"/></span>
+                                                            <span class="product-line-filler"></span>
+                                                        </div>
                                                     </t>
                                                 </td>
 
-                                                <!-- Cantidad total -->
-                                                <td>
-                                                    <t t-set="cant_total" t-value="sum(compra.order_line.mapped('product_qty'))"/>
-                                                    <t t-esc="'%.2f' % cant_total"/>
+                                                <!-- Cantidades desglosadas -->
+                                                <td class="col-products text-start">
+                                                    <t t-foreach="compra.order_line" t-as="linea">
+                                                        <div class="product-line-qty">
+                                                            <t t-esc="'%g' % linea.product_qty"/>
+                                                        </div>
+                                                    </t>
                                                 </td>
 
                                                 <!-- Total (monto) -->

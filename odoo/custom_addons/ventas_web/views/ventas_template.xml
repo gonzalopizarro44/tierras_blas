@@ -67,11 +67,14 @@
                 }
 
                 .sales-badge {
-                    display: inline-block;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.25em;
                     padding: 0.25em 0.65em;
                     border-radius: 999px;
                     font-size: 0.75rem;
                     font-weight: 600;
+                    white-space: nowrap;
                 }
 
                 .badge-sale { background: var(--brand-light); color: var(--brand-primary); }
@@ -93,9 +96,14 @@
                 .sales-table tbody td {
                     padding: 0.75rem;
                     border-color: var(--brand-border);
-                    vertical-align: middle;
+                    vertical-align: top;
                     color: var(--brand-text);
                     font-size: 0.9rem;
+                    white-space: nowrap;
+                }
+
+                .sales-table tbody td.col-products {
+                    white-space: normal;
                 }
 
                 .sales-table tbody tr:hover {
@@ -125,7 +133,7 @@
                 .sales-btn-sm {
                     padding: 0.35rem 0.65rem;
                     font-size: 0.8rem;
-                    margin: 0 0.25rem;
+                    white-space: nowrap;
                 }
 
                 .sales-btn-success {
@@ -209,7 +217,7 @@
                     height: 1.4rem;
                     display: flex;
                     align-items: center;
-                    justify-content: flex-end;
+                    justify-content: flex-start;
                     font-weight: 600;
                     font-size: 0.85rem;
                     color: var(--brand-primary);
@@ -315,7 +323,7 @@
                                             <th>Cantidad</th>
                                             <th>Total</th>
                                             <th>Estado</th>
-                                            <th>Método de Pago</th>
+                                            <th>Mét. de Pago</th>
                                             <th>Origen</th>
                                             <th>Fecha</th>
                                             <th>Acciones</th>
@@ -335,7 +343,7 @@
                                                 </td>
 
                                                 <!-- Productos con línea punteada -->
-                                                <td style="min-width: 200px;">
+                                                <td class="col-products" style="min-width: 200px;">
                                                     <t t-foreach="venta.order_line" t-as="linea">
                                                         <div class="product-line-row">
                                                             <span class="product-line-name"><t t-esc="linea.product_id.name"/></span>
@@ -345,7 +353,7 @@
                                                 </td>
 
                                                 <!-- Cantidades desglosadas -->
-                                                <td class="text-end">
+                                                <td class="col-products text-start">
                                                     <t t-foreach="venta.order_line" t-as="linea">
                                                         <div class="product-line-qty">
                                                             <t t-esc="'%g' % linea.product_uom_qty"/>
@@ -391,33 +399,35 @@
 
                                                 <!-- Acciones -->
                                                 <td>
-                                                    <t t-if="venta.state == 'draft'">
-                                                        <button type="button" class="btn sales-btn-sm sales-btn-success"
-                                                                onclick="confirmarVenta(this)" t-att-data-order-id="venta.id">
-                                                            ✓ Confirmar
-                                                        </button>
-                                                    </t>
-                                                    <t t-elif="venta.state == 'sale'">
-                                                        <!-- Solo mostrar botón si hay entregas pendientes (assigned/confirmed) -->
-                                                        <t t-if="venta.id in order_ids_con_entregas">
+                                                    <div class="d-flex flex-nowrap align-items-center gap-1">
+                                                        <t t-if="venta.state == 'draft'">
                                                             <button type="button" class="btn sales-btn-sm sales-btn-success"
-                                                                    onclick="validarEntrega(this)" t-att-data-order-id="venta.id">
-                                                                ✓ Validar Entrega
+                                                                    onclick="confirmarVenta(this)" t-att-data-order-id="venta.id">
+                                                                ✓ Confirmar
                                                             </button>
                                                         </t>
-                                                        <!-- Si NO hay entregas pendientes pero está en 'sale' -->
-                                                        <t t-else="">
-                                                            <button type="button" class="btn sales-btn-sm btn-secondary" disabled="disabled">
-                                                                ✓ Entregado
+                                                        <t t-elif="venta.state == 'sale'">
+                                                            <!-- Solo mostrar botón si hay entregas pendientes (assigned/confirmed) -->
+                                                            <t t-if="venta.id in order_ids_con_entregas">
+                                                                <button type="button" class="btn sales-btn-sm sales-btn-success"
+                                                                        onclick="validarEntrega(this)" t-att-data-order-id="venta.id">
+                                                                    ✓ Validar
+                                                                </button>
+                                                            </t>
+                                                            <!-- Si NO hay entregas pendientes pero está en 'sale' -->
+                                                            <t t-else="">
+                                                                <button type="button" class="btn sales-btn-sm btn-secondary" disabled="disabled">
+                                                                    ✓ Entregado
+                                                                </button>
+                                                            </t>
+                                                        </t>
+                                                        <t t-if="venta.state in ('draft', 'sale')">
+                                                            <button type="button" class="btn sales-btn-sm sales-btn-danger"
+                                                                    onclick="cancelarVenta(this)" t-att-data-order-id="venta.id">
+                                                                ✕ Cancelar
                                                             </button>
                                                         </t>
-                                                    </t>
-                                                    <t t-if="venta.state in ('draft', 'sale')">
-                                                        <button type="button" class="btn sales-btn-sm sales-btn-danger"
-                                                                onclick="cancelarVenta(this)" t-att-data-order-id="venta.id">
-                                                            ✕ Cancelar
-                                                        </button>
-                                                    </t>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         </t>
