@@ -255,6 +255,130 @@
                     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
                     gap: 1rem;
                 }
+
+                /* ── Autocomplete Cliente ── */
+                .nv-autocomplete {
+                    position: relative;
+                }
+
+                .nv-autocomplete-input {
+                    width: 100%;
+                    padding: 0.6rem 2.5rem 0.6rem 0.85rem;
+                    font-size: 1rem;
+                    border: 1px solid var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    background: white;
+                    color: var(--brand-text);
+                    transition: border-color 0.2s, box-shadow 0.2s;
+                }
+
+                .nv-autocomplete-input:focus {
+                    border-color: var(--brand-primary);
+                    box-shadow: 0 0 0 0.2rem rgba(22,101,52,.15);
+                    outline: none;
+                }
+
+                .nv-autocomplete-input.has-value {
+                    border-color: var(--brand-primary);
+                    background: var(--brand-light);
+                    font-weight: 600;
+                }
+
+                .nv-autocomplete-clear {
+                    position: absolute;
+                    right: 0.75rem;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    cursor: pointer;
+                    color: #9ca3af;
+                    font-size: 1.1rem;
+                    line-height: 1;
+                    padding: 0.2rem;
+                    display: none;
+                    z-index: 2;
+                }
+
+                .nv-autocomplete-clear:hover {
+                    color: #f87171;
+                }
+
+                .nv-autocomplete.has-selection .nv-autocomplete-clear {
+                    display: block;
+                }
+
+                .nv-autocomplete-dropdown {
+                    position: absolute;
+                    top: 100%;
+                    left: 0;
+                    right: 0;
+                    z-index: 999;
+                    background: white;
+                    border: 1px solid var(--brand-border);
+                    border-top: none;
+                    border-radius: 0 0 var(--brand-radius) var(--brand-radius);
+                    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+                    max-height: 280px;
+                    overflow-y: auto;
+                    display: none;
+                }
+
+                .nv-autocomplete-dropdown.show {
+                    display: block;
+                }
+
+                .nv-autocomplete-item {
+                    padding: 0.65rem 1rem;
+                    cursor: pointer;
+                    font-size: 0.92rem;
+                    border-bottom: 1px solid #f3f4f6;
+                    transition: background 0.15s;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                }
+
+                .nv-autocomplete-item:last-child {
+                    border-bottom: none;
+                }
+
+                .nv-autocomplete-item:hover,
+                .nv-autocomplete-item.active {
+                    background: var(--brand-light);
+                    color: var(--brand-primary);
+                }
+
+                .nv-autocomplete-item .nv-ac-icon {
+                    font-size: 1rem;
+                    flex-shrink: 0;
+                }
+
+                .nv-autocomplete-item .nv-ac-name {
+                    font-weight: 500;
+                }
+
+                .nv-autocomplete-item .nv-ac-vat {
+                    color: var(--brand-text-muted);
+                    font-size: 0.82rem;
+                    margin-left: auto;
+                }
+
+                .nv-autocomplete-loading,
+                .nv-autocomplete-empty {
+                    padding: 0.85rem 1rem;
+                    text-align: center;
+                    color: var(--brand-text-muted);
+                    font-size: 0.88rem;
+                }
+
+                .nv-autocomplete-info {
+                    padding: 0.4rem 1rem;
+                    text-align: right;
+                    color: var(--brand-text-muted);
+                    font-size: 0.75rem;
+                    background: #f9fafb;
+                    border-top: 1px solid #f3f4f6;
+                    border-radius: 0 0 var(--brand-radius) var(--brand-radius);
+                }
             </style>
 
             <div class="nv-page">
@@ -273,15 +397,16 @@
                         <div class="row">
                             <div class="col-md-8">
                                 <label class="nv-label">Cliente Existente</label>
-                                <select id="clienteSelect" class="form-select form-select-lg" onchange="clienteSeleccionado()">
-                                    <option value="">-- Seleccionar cliente --</option>
-                                    <t t-foreach="clientes" t-as="c">
-                                        <option t-att-value="c.id">
-                                            <t t-esc="c.name"/>
-                                            <t t-if="c.vat"> (<t t-esc="c.vat"/>)</t>
-                                        </option>
-                                    </t>
-                                </select>
+                                <div class="nv-autocomplete" id="clienteAutocomplete">
+                                    <input type="text"
+                                        id="clienteSearchInput"
+                                        class="nv-autocomplete-input"
+                                        placeholder="Buscar cliente por nombre o DNI..."
+                                        autocomplete="off"/>
+                                    <span class="nv-autocomplete-clear" id="clienteClear" onclick="limpiarCliente()">✕</span>
+                                    <input type="hidden" id="clienteSelectValue" value=""/>
+                                    <div class="nv-autocomplete-dropdown" id="clienteDropdown"></div>
+                                </div>
                             </div>
 
                             <div class="col-md-4">
@@ -432,20 +557,181 @@
                     </t>
                 ];
 
-                function clienteSeleccionado() {
-                    const select = document.getElementById('clienteSelect');
-                    const clienteId = select.value;
+                // ╔════════════════════════════════════════════════════════════╗
+                // ║ AUTOCOMPLETE DE CLIENTES - Búsqueda en tiempo real       ║
+                // ╚════════════════════════════════════════════════════════════╝
 
-                    if (clienteId) {
-                        ventaData.cliente_id = parseInt(clienteId);
-                        document.getElementById('clienteInfo').style.display = 'block';
-                        document.getElementById('clienteInfoNombre').innerText = select.options[select.selectedIndex].text;
-                    } else {
+                let clienteSearchTimer = null;
+                let clienteActiveIndex = -1;
+                let clienteResults = [];
+
+                // Al cargar la página, traer los primeros clientes automáticamente
+                document.addEventListener('DOMContentLoaded', function() {
+                    buscarClientes('');
+                });
+
+                const clienteInput = document.getElementById('clienteSearchInput');
+                const clienteDropdown = document.getElementById('clienteDropdown');
+                const clienteHidden = document.getElementById('clienteSelectValue');
+                const clienteContainer = document.getElementById('clienteAutocomplete');
+
+                // Input: búsqueda con debounce
+                clienteInput.addEventListener('input', function() {
+                    const term = this.value.trim();
+
+                    // Si ya había un cliente seleccionado y el usuario borra, limpiar selección
+                    if (ventaData.cliente_id) {
                         ventaData.cliente_id = null;
+                        clienteHidden.value = '';
+                        clienteContainer.classList.remove('has-selection');
+                        clienteInput.classList.remove('has-value');
                         document.getElementById('clienteInfo').style.display = 'none';
                     }
 
+                    clearTimeout(clienteSearchTimer);
+                    clienteSearchTimer = setTimeout(function() {
+                        buscarClientes(term);
+                    }, 300);
+                });
+
+                // Focus: mostrar dropdown con resultados
+                clienteInput.addEventListener('focus', function() {
+                    if (!ventaData.cliente_id) {
+                        if (clienteResults.length > 0) {
+                            clienteDropdown.classList.add('show');
+                        } else {
+                            buscarClientes(this.value.trim());
+                        }
+                    }
+                });
+
+                // Click fuera: cerrar dropdown
+                document.addEventListener('click', function(e) {
+                    if (!clienteContainer.contains(e.target)) {
+                        clienteDropdown.classList.remove('show');
+                        clienteActiveIndex = -1;
+                    }
+                });
+
+                // Teclado: navegar con flechas y Enter
+                clienteInput.addEventListener('keydown', function(e) {
+                    const items = clienteDropdown.querySelectorAll('.nv-autocomplete-item');
+                    if (!items.length) return;
+
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        clienteActiveIndex = Math.min(clienteActiveIndex + 1, items.length - 1);
+                        actualizarItemActivo(items);
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        clienteActiveIndex = Math.max(clienteActiveIndex - 1, 0);
+                        actualizarItemActivo(items);
+                    } else if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (clienteActiveIndex >= 0 &amp;&amp; clienteActiveIndex &lt; items.length) {
+                            items[clienteActiveIndex].click();
+                        }
+                    } else if (e.key === 'Escape') {
+                        clienteDropdown.classList.remove('show');
+                        clienteActiveIndex = -1;
+                    }
+                });
+
+                function actualizarItemActivo(items) {
+                    items.forEach(function(item, i) {
+                        if (i === clienteActiveIndex) {
+                            item.classList.add('active');
+                            item.scrollIntoView({ block: 'nearest' });
+                        } else {
+                            item.classList.remove('active');
+                        }
+                    });
+                }
+
+                function buscarClientes(term) {
+                    // Mostrar loading
+                    clienteDropdown.innerHTML = '&lt;div class="nv-autocomplete-loading"&gt;⏳ Buscando clientes...&lt;/div&gt;';
+                    clienteDropdown.classList.add('show');
+                    clienteActiveIndex = -1;
+
+                    fetch('/ventas/buscar_clientes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            method: "call",
+                            params: { term: term, limit: 30 }
+                        })
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.result &amp;&amp; data.result.success) {
+                            clienteResults = data.result.clientes;
+                            renderizarClientes(data.result.clientes, data.result.total);
+                        } else {
+                            clienteDropdown.innerHTML = '&lt;div class="nv-autocomplete-empty"&gt;❌ Error al buscar clientes&lt;/div&gt;';
+                        }
+                    })
+                    .catch(function() {
+                        clienteDropdown.innerHTML = '&lt;div class="nv-autocomplete-empty"&gt;❌ Error de conexión&lt;/div&gt;';
+                    });
+                }
+
+                function renderizarClientes(clientes, total) {
+                    if (clientes.length === 0) {
+                        clienteDropdown.innerHTML = '&lt;div class="nv-autocomplete-empty"&gt;No se encontraron clientes&lt;/div&gt;';
+                        return;
+                    }
+
+                    let html = '';
+                    var dq = String.fromCharCode(34);
+                    clientes.forEach(function(c) {
+                        var safeLabel = c.label.replace(new RegExp(dq, 'g'), '&amp;apos;');
+                        html += '&lt;div class=' + dq + 'nv-autocomplete-item' + dq + ' data-id=' + dq + c.id + dq + ' data-label=' + dq + safeLabel + dq + ' onclick=' + dq + 'seleccionarCliente(' + c.id + ', this)' + dq + '&gt;';
+                        html += '&lt;span class=' + dq + 'nv-ac-icon' + dq + '&gt;👤&lt;/span&gt;';
+                        html += '&lt;span class=' + dq + 'nv-ac-name' + dq + '&gt;' + c.name + '&lt;/span&gt;';
+                        if (c.vat) {
+                            html += '&lt;span class=' + dq + 'nv-ac-vat' + dq + '&gt;' + c.vat + '&lt;/span&gt;';
+                        }
+                        html += '&lt;/div&gt;';
+                    });
+
+                    if (total > clientes.length) {
+                        html += '&lt;div class="nv-autocomplete-info"&gt;Mostrando ' + clientes.length + ' de ' + total + ' — Escribí para filtrar&lt;/div&gt;';
+                    }
+
+                    clienteDropdown.innerHTML = html;
+                }
+
+                function seleccionarCliente(id, elem) {
+                    const label = elem.getAttribute('data-label');
+                    ventaData.cliente_id = id;
+                    clienteHidden.value = id;
+                    clienteInput.value = label;
+                    clienteInput.classList.add('has-value');
+                    clienteContainer.classList.add('has-selection');
+                    clienteDropdown.classList.remove('show');
+                    clienteActiveIndex = -1;
+
+                    // Mostrar info de cliente seleccionado
+                    document.getElementById('clienteInfo').style.display = 'block';
+                    document.getElementById('clienteInfoNombre').innerText = label;
+
                     actualizarResumen();
+                }
+
+                function limpiarCliente() {
+                    ventaData.cliente_id = null;
+                    clienteHidden.value = '';
+                    clienteInput.value = '';
+                    clienteInput.classList.remove('has-value');
+                    clienteContainer.classList.remove('has-selection');
+                    document.getElementById('clienteInfo').style.display = 'none';
+                    clienteActiveIndex = -1;
+                    clienteResults = [];
+                    actualizarResumen();
+                    clienteInput.focus();
+                    buscarClientes('');
                 }
 
                 function crearClienteRapido() {
@@ -466,29 +752,32 @@
                             params: { nombre: nombre, dni: dni }
                         })
                     })
-                    .then(r => r.json())
-                    .then(data => {
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
                         if (data.result &amp;&amp; data.result.success) {
-                            // Agregar nuevo cliente al select
-                            const select = document.getElementById('clienteSelect');
-                            const option = document.createElement('option');
-                            option.value = data.result.id;
-                            option.text = data.result.nombre;
-                            select.appendChild(option);
-                            select.value = data.result.id;
+                            // Seleccionar el nuevo cliente automáticamente
+                            ventaData.cliente_id = data.result.id;
+                            clienteHidden.value = data.result.id;
+                            clienteInput.value = data.result.nombre;
+                            clienteInput.classList.add('has-value');
+                            clienteContainer.classList.add('has-selection');
 
                             // Limpiar formulario
                             document.getElementById('nuevoClienteNombre').value = '';
                             document.getElementById('nuevoClienteDNI').value = '';
                             document.getElementById('nuevoClienteForm').classList.remove('show');
 
-                            clienteSeleccionado();
+                            // Mostrar info
+                            document.getElementById('clienteInfo').style.display = 'block';
+                            document.getElementById('clienteInfoNombre').innerText = data.result.nombre;
+
+                            actualizarResumen();
                             alert(data.result.message);
                         } else {
                             alert('Error: ' + (data.result ? data.result.message : 'Unknown'));
                         }
                     })
-                    .catch(err => {
+                    .catch(function(err) {
                         console.error(err);
                         alert('Error de conexión');
                     });
