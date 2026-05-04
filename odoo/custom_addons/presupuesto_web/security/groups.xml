@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Permisos para presupuesto_web.
+        Reutiliza el grupo 'group_administrador' de permisos_usuarios.
+        No se crean grupos adicionales.
+    -->
+</odoo>

@@ -25,8 +25,12 @@ FLUJO DE STOCK:
 ==============================================================================
 """
 
+import logging
 from odoo import http
 from odoo.http import request
+
+_logger = logging.getLogger(__name__)
+
 
 
 class VentasController(http.Controller):
@@ -141,13 +145,7 @@ class VentasController(http.Controller):
         """
         Formulario para crear una nueva orden de venta.
         
-        Carga:
-        - Productos (product.product) con sale_ok = True
-        - Métodos de pago (account.journal) tipo 'sale'
-        - Clientes se cargan dinámicamente via AJAX (/ventas/buscar_clientes)
-        
-        Returns:
-            http.Response: Página HTML del formulario
+        Permite pre-cargar datos desde un presupuesto si se pasa from_presupuesto=<ID>
         """
         # ── Validar permisos ──
         if not self._check_permissions():
@@ -164,17 +162,13 @@ class VentasController(http.Controller):
         )
 
         # ── Enriquecer productos con stock disponible ──
-        # Crear diccionarios mapeados con información de stock (sin modificar ORM)
         productos_formateados = []
         for p in productos:
-            # Obtener cantidad disponible según tipo de producto
             if p.type == 'service':
-                # Los servicios no tienen stock
                 stock = 0
                 nombre_visual = p.display_name
                 is_service = True
             else:
-                # Productos físicos: usar free_qty (cantidad disponible)
                 stock = p.free_qty
                 nombre_visual = "{} - Stock: {} u.".format(
                     p.display_name,
@@ -192,9 +186,39 @@ class VentasController(http.Controller):
                 'is_service': is_service
             })
 
+        # ── PROCESAR PRE-CARGA DESDE PRESUPUESTO ──
+        presupuesto_data = None
+        from_presupuesto_id = kwargs.get('from_presupuesto')
+        
+        if from_presupuesto_id:
+            try:
+                presup_id = int(from_presupuesto_id)
+                orden = request.env['sale.order'].sudo().browse(presup_id)
+                if orden.exists():
+                    lineas_precarga = []
+                    for line in orden.order_line:
+                        lineas_precarga.append({
+                            'product_id': line.product_id.id,
+                            'product_name': line.product_id.name,
+                            'quantity': line.product_uom_qty,
+                            'price_unit': line.price_unit,
+                            'subtotal': line.price_subtotal,
+                        })
+                    
+                    presupuesto_data = {
+                        'id': orden.id,
+                        'name': orden.name,
+                        'cliente_id': orden.partner_id.id,
+                        'cliente_nombre': orden.partner_id.name,
+                        'lineas': lineas_precarga
+                    }
+            except Exception as e:
+                print("Error cargando presupuesto para venta:", e)
+
         ctx = {
             'productos': productos_formateados,
             'journals': journals,
+            'presupuesto_data': presupuesto_data,
         }
 
         return request.render('ventas_web.nueva_venta_template', ctx)
@@ -307,39 +331,18 @@ class VentasController(http.Controller):
     # ═════════════════════════════════════════════════════════════════════════
 
     @http.route('/ventas/crear', type='jsonrpc', auth='user', website=True, methods=['POST'])
-    def crear_venta(self, cliente_id, lineas, origen='admin', journal_id=None):
+    def crear_venta(self, cliente_id, lineas, origen='admin', journal_id=None, presupuesto_id=None):
         """
         Crea una nueva orden de venta con líneas de productos.
         
-        Usa: sales_service.create_sale_order()
-        
-        FLUJO:
-        1. Valida datos
-        2. Crea sale.order
-        3. Crea sale.order.line para cada producto
-        4. Confirma automáticamente
-        5. El sistema descuenta stock automáticamente
-        
-        Parámetros (JSON-RPC):
-        - cliente_id: ID del cliente (res.partner)
-        - lineas: Lista de dicts [{'product_id': int, 'quantity': float}, ...]
-        - origen: string ('admin', 'cliente_web', etc) - default: 'admin'
-        - journal_id: ID del journal de pago - opcional
-        
-        Returns:
-            dict: {
-                'success': bool,
-                'order_id': int,
-                'order_name': str,
-                'message': str,
-                'url': str
-            }
+        Si viene de un presupuesto (presupuesto_id), lo marca como cancelado
+        para evitar duplicidad y limpiar el panel de presupuestos.
         """
         # ── Validar permisos ──
         if not self._check_permissions():
             return {'success': False, 'message': 'No tiene permisos.'}
 
-        # ── Llamar al servicio ──
+        # ── Llamar al servicio de ventas ──
         sales_service = self._get_sales_service()
         resultado = sales_service.create_sale_order(
             cliente_id=cliente_id,
@@ -347,6 +350,17 @@ class VentasController(http.Controller):
             origen=origen,
             journal_id=journal_id
         )
+
+        # ── SI ÉXITO: Cancelar el presupuesto original si aplica ──
+        if resultado.get('success') and presupuesto_id:
+            try:
+                p_id = int(presupuesto_id)
+                orden_p = request.env['sale.order'].sudo().browse(p_id)
+                if orden_p.exists() and orden_p.state != 'cancel':
+                    orden_p.action_cancel()
+                    _logger.info(f"[VENTAS_WEB] Presupuesto {orden_p.name} cancelado por conversión a venta.")
+            except Exception as e:
+                _logger.error(f"Error cancelando presupuesto tras venta: {str(e)}")
 
         return resultado
 

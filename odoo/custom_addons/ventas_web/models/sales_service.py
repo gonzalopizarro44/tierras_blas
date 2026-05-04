@@ -96,22 +96,17 @@ class SalesService(models.AbstractModel):
         """
         Construye un domain (filtro ORM) basado en parámetros GET.
         
-        Soporta:
-        - cliente: búsqueda por nombre en partner_id (ilike)
-        - producto: búsqueda en order_line.product_id (ilike)
-        - fecha_desde / fecha_hasta: rango de date_order
-        - monto_min / monto_max: rango de amount_total
-        - categoria: product_id.categ_id (ID exacto)
-        - estado: state ('confirmada' → 'sale', 'cancelada' → 'cancel')
-        - origen: sales_origin (exacto)
-        
-        Args:
-            kwargs (dict): Parámetros GET del request
-        
-        Returns:
-            list: Domain Odoo para search()
+        FILTRO BASE:
+        - Oculta presupuestos de 'presupuesto_web' que no estén confirmados (draft/cancel).
+        - Muestra todas las ventas directas (admin).
         """
-        domain = []
+        domain = [
+            '|',
+            ('presupuesto_origin', '!=', 'presupuesto_web'),
+            '&',
+            ('presupuesto_origin', '=', 'presupuesto_web'),
+            ('state', 'in', ['sale', 'done'])
+        ]
 
         # ── Filtro: Cliente (name, DNI) ──
         cliente = kwargs.get('cliente', '').strip()

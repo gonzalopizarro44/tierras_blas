@@ -1,0 +1,467 @@
+<odoo>
+    <template id="presupuestos_template" name="Panel de Presupuestos">
+
+        <t t-call="website.layout">
+
+            <!-- ESTILOS PERSONALIZADOS -->
+            <style>
+                :root {
+                    --brand-primary: #166534;
+                    --brand-primary-dark: #0f4620;
+                    --brand-light: #dcfce7;
+                    --brand-secondary: #6b7280;
+                    --brand-bg: #f9fafb;
+                    --brand-card: #ffffff;
+                    --brand-border: #e5e7eb;
+                    --brand-text: #1f2937;
+                    --brand-text-muted: #6b7280;
+                    --brand-shadow: 0 1px 3px rgba(0,0,0,.08);
+                    --brand-radius: 0.75rem;
+                }
+
+                .presup-page {
+                    background: var(--brand-bg);
+                    min-height: 100vh;
+                    padding: 2rem 0;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .presup-card {
+                    background: var(--brand-card);
+                    border-radius: var(--brand-radius);
+                    box-shadow: var(--brand-shadow);
+                    border: 1px solid var(--brand-border);
+                    padding: 1.5rem;
+                    margin-bottom: 1.5rem;
+                    transition: box-shadow 0.3s ease;
+                }
+
+                .presup-card:hover {
+                    box-shadow: 0 4px 6px rgba(0,0,0,.1);
+                }
+
+                .presup-title {
+                    font-size: 1.75rem;
+                    font-weight: 700;
+                    color: var(--brand-text);
+                    margin: 0;
+                    font-family: 'Inter', sans-serif;
+                }
+
+                .presup-subtitle {
+                    font-size: 0.9rem;
+                    color: var(--brand-text-muted);
+                    margin-top: 0.25rem;
+                }
+
+                .presup-stat {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    padding: 0.5rem 1rem;
+                    background: var(--brand-light);
+                    border-radius: var(--brand-radius);
+                    color: var(--brand-primary);
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                }
+
+                .presup-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.25em;
+                    padding: 0.25em 0.65em;
+                    border-radius: 999px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    white-space: nowrap;
+                }
+
+                .badge-draft { background: #fef3c7; color: #78350f; }
+                .badge-cancel { background: #fee2e2; color: #7f1d1d; }
+                .badge-sent { background: #dbeafe; color: #1e40af; }
+
+                .presup-table thead th {
+                    background: var(--brand-bg);
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.03em;
+                    color: var(--brand-text-muted);
+                    font-size: 0.8rem;
+                    border-color: var(--brand-border);
+                    padding: 1rem 0.75rem;
+                    border-bottom: 2px solid var(--brand-border);
+                }
+
+                .presup-table tbody td {
+                    padding: 0.75rem;
+                    border-color: var(--brand-border);
+                    vertical-align: top;
+                    color: var(--brand-text);
+                    font-size: 0.9rem;
+                    white-space: nowrap;
+                }
+
+                .presup-table tbody td.col-products {
+                    white-space: normal;
+                }
+
+                .presup-table tbody tr:hover {
+                    background: var(--brand-bg);
+                }
+
+                .presup-btn-primary {
+                    background: var(--brand-primary);
+                    border: none;
+                    color: white;
+                    padding: 0.5rem 1rem;
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                    border-radius: var(--brand-radius);
+                    transition: all 0.2s;
+                    font-family: 'Inter', sans-serif;
+                    cursor: pointer;
+                }
+
+                .presup-btn-primary:hover {
+                    background: var(--brand-primary-dark);
+                    color: white;
+                    text-decoration: none;
+                    transform: translateY(-1px);
+                }
+
+                .presup-btn-sm {
+                    padding: 0.35rem 0.65rem;
+                    font-size: 0.8rem;
+                    white-space: nowrap;
+                }
+
+                .presup-btn-danger {
+                    background: #f87171;
+                    color: white;
+                }
+
+                .presup-btn-danger:hover {
+                    background: #ef4444;
+                    color: white;
+                    transform: translateY(-1px);
+                }
+
+                .presup-btn-warning {
+                    background: #12a530cc;
+                    color: white;
+                }
+
+                .presup-btn-warning:hover {
+                    background: #12a530cc;
+                    color: white;
+                    transform: translateY(-1px);
+                }
+
+                .presup-btn-info {
+                    background: #3b82f6;
+                    color: white;
+                }
+
+                .presup-btn-info:hover {
+                    background: #2563eb;
+                    color: white;
+                    transform: translateY(-1px);
+                }
+
+                .presup-filter-label {
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                    color: var(--brand-text-muted);
+                    text-transform: uppercase;
+                    letter-spacing: 0.025em;
+                    margin-bottom: 0.35rem;
+                }
+
+                .form-control, .form-select {
+                    border-color: var(--brand-border);
+                    border-radius: var(--brand-radius);
+                    font-family: 'Inter', sans-serif;
+                    color: var(--brand-text);
+                    font-size: 0.9rem;
+                }
+
+                .form-control:focus, .form-select:focus {
+                    border-color: var(--brand-primary);
+                    box-shadow: 0 0 0 0.2rem rgba(22,101,52,.15);
+                }
+
+                .presup-empty {
+                    text-align: center;
+                    padding: 3rem 1rem;
+                    color: var(--brand-text-muted);
+                }
+
+                .presup-empty i {
+                    font-size: 3rem;
+                    margin-bottom: 1rem;
+                    display: block;
+                    color: #adb5bd;
+                }
+
+                /* ESTILOS PARA DESGLOSE DE PRODUCTOS */
+                .product-line-row {
+                    display: flex;
+                    align-items: baseline;
+                    height: 1.4rem;
+                    margin-bottom: 2px;
+                }
+                .product-line-name {
+                    white-space: nowrap;
+                    font-size: 0.8rem;
+                    color: var(--brand-text);
+                    padding-right: 0.5rem;
+                    flex-shrink: 0;
+                }
+                .product-line-filler {
+                    flex-grow: 1;
+                    border-bottom: 1px dotted #cbd5e1;
+                    height: 1px;
+                    margin-bottom: 4px;
+                }
+                .product-line-qty {
+                    height: 1.4rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: flex-start;
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                    color: var(--brand-primary);
+                    margin-bottom: 2px;
+                }
+            </style>
+
+            <div class="presup-page">
+                <div class="container-lg">
+
+                    <!-- HEADER -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1 class="presup-title">Panel de Presupuestos</h1>
+                            <p class="presup-subtitle">Cotizaciones generadas desde el módulo web</p>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center">
+                            <div class="presup-stat">
+                                <strong>Total:</strong>
+                                <t t-esc="total_presupuestos"/>
+                            </div>
+                            <a href="/presupuestos/nuevo" class="btn presup-btn-primary">
+                                ➕ Nuevo Presupuesto
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- FILTROS -->
+                    <div class="presup-card">
+                        <form method="GET" action="/presupuestos" class="row g-3 align-items-end">
+
+                            <!-- Cliente -->
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <label class="presup-filter-label">Cliente</label>
+                                <input type="text" name="cliente" class="form-control form-control-sm"
+                                       placeholder="Nombre..."
+                                       t-att-value="filtros.get('cliente', '')"/>
+                            </div>
+
+                            <!-- Producto -->
+                            <div class="col-12 col-md-6 col-lg-3">
+                                <label class="presup-filter-label">Producto</label>
+                                <input type="text" name="producto" class="form-control form-control-sm"
+                                       placeholder="Nombre..."
+                                       t-att-value="filtros.get('producto', '')"/>
+                            </div>
+
+                            <!-- Fecha Desde -->
+                            <div class="col-12 col-md-6 col-lg-2">
+                                <label class="presup-filter-label">Desde</label>
+                                <input type="date" name="fecha_desde" class="form-control form-control-sm"
+                                       t-att-value="filtros.get('fecha_desde', '')"/>
+                            </div>
+
+                            <!-- Fecha Hasta -->
+                            <div class="col-12 col-md-6 col-lg-2">
+                                <label class="presup-filter-label">Hasta</label>
+                                <input type="date" name="fecha_hasta" class="form-control form-control-sm"
+                                       t-att-value="filtros.get('fecha_hasta', '')"/>
+                            </div>
+
+                            <!-- Botones -->
+                            <div class="col-12 col-lg-auto d-flex gap-2">
+                                <button type="submit" class="btn btn-sm btn-primary">🔍 Filtrar</button>
+                                <a href="/presupuestos" class="btn btn-sm btn-outline-secondary">✕ Limpiar</a>
+                            </div>
+
+                        </form>
+                    </div>
+
+                    <!-- TABLA DE PRESUPUESTOS -->
+                    <div class="presup-card" style="overflow: hidden; padding: 0;">
+
+                        <t t-if="presupuestos">
+                            <div class="table-responsive">
+                                <table class="table presup-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Nro Presupuesto</th>
+                                            <th>Cliente</th>
+                                            <th>Productos</th>
+                                            <th>Cantidad</th>
+                                            <th>Total</th>
+                                            <th>Estado</th>
+                                            <th>Fecha</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="presupuestos" t-as="presup">
+                                            <tr>
+                                                <!-- Número de presupuesto -->
+                                                <td style="font-weight: 600;">
+                                                    <t t-esc="presup.name"/>
+                                                </td>
+
+                                                <!-- Cliente -->
+                                                <td>
+                                                    <t t-esc="presup.partner_id.name"/>
+                                                </td>
+
+                                                <!-- Productos con línea punteada -->
+                                                <td class="col-products" style="min-width: 200px;">
+                                                    <t t-foreach="presup.order_line" t-as="linea">
+                                                        <div class="product-line-row">
+                                                            <span class="product-line-name"><t t-esc="linea.product_id.name"/></span>
+                                                            <span class="product-line-filler"></span>
+                                                        </div>
+                                                    </t>
+                                                </td>
+
+                                                <!-- Cantidades desglosadas -->
+                                                <td class="col-products text-start">
+                                                    <t t-foreach="presup.order_line" t-as="linea">
+                                                        <div class="product-line-qty">
+                                                            <t t-esc="'%g' % linea.product_uom_qty"/>
+                                                        </div>
+                                                    </t>
+                                                </td>
+
+                                                <!-- Total (monto) -->
+                                                <td style="font-weight: 600;">
+                                                    $ <t t-esc="'%.2f' % presup.amount_total"/>
+                                                </td>
+
+                                                <!-- Estado (badge) -->
+                                                <td>
+                                                    <t t-if="presup.state == 'draft'">
+                                                        <span class="presup-badge badge-draft">✎ Borrador</span>
+                                                    </t>
+                                                    <t t-elif="presup.state == 'sent'">
+                                                        <span class="presup-badge badge-sent">📤 Enviado</span>
+                                                    </t>
+                                                    <t t-elif="presup.state == 'cancel'">
+                                                        <span class="presup-badge badge-cancel">✕ Cancelado</span>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <span class="presup-badge badge-draft"><t t-esc="presup.state"/></span>
+                                                    </t>
+                                                </td>
+
+                                                <!-- Fecha -->
+                                                <td>
+                                                    <small><t t-esc="presup.date_order.strftime('%d/%m/%Y %H:%M')"/></small>
+                                                </td>
+
+                                                <!-- Acciones -->
+                                                <td>
+                                                    <div class="d-flex flex-nowrap align-items-center gap-1">
+                                                        <!-- Crear Venta (solo si no está cancelado) -->
+                                                        <t t-if="presup.state != 'cancel'">
+                                                            <a t-attf-href="/ventas/nueva?from_presupuesto=#{presup.id}"
+                                                               class="btn presup-btn-sm presup-btn-warning"
+                                                               title="Convertir en Venta">
+                                                                🛒 Crear Venta
+                                                            </a>
+                                                        </t>
+                                                        <!-- Descargar PDF -->
+                                                        <a t-attf-href="/presupuestos/#{presup.id}/pdf"
+                                                           class="btn presup-btn-sm presup-btn-info"
+                                                           title="Descargar PDF">
+                                                            📄 PDF
+                                                        </a>
+                                                        <!-- Cancelar -->
+                                                        <t t-if="presup.state in ('draft', 'sent')">
+                                                            <button type="button" class="btn presup-btn-sm presup-btn-danger"
+                                                                    onclick="cancelarPresupuesto(this)" t-att-data-order-id="presup.id">
+                                                                ✕ Cancelar
+                                                            </button>
+                                                        </t>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+
+                        <!-- Estado vacío -->
+                        <t t-else="">
+                            <div class="presup-empty">
+                                <i>📋</i>
+                                <h5>No se encontraron presupuestos</h5>
+                                <p class="mb-0">Crea tu primer presupuesto o ajusta los filtros.</p>
+                            </div>
+                        </t>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- JAVASCRIPT -->
+            <script type="text/javascript">
+                function cancelarPresupuesto(btn) {
+                    var orderId = btn.getAttribute('data-order-id');
+                    var txtBtn = btn.innerText;
+
+                    if (!confirm('¿Cancelar este presupuesto?')) return;
+
+                    btn.disabled = true;
+                    btn.innerHTML = '⏳ Procesando...';
+
+                    fetch('/presupuestos/cancelar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            jsonrpc: "2.0",
+                            method: "call",
+                            params: { order_id: parseInt(orderId) }
+                        })
+                    })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (data.result &amp;&amp; data.result.success) {
+                            alert(data.result.message);
+                            location.reload();
+                        } else {
+                            alert('Error: ' + (data.result ? data.result.message : 'Unknown'));
+                            btn.disabled = false;
+                            btn.innerText = txtBtn;
+                        }
+                    })
+                    .catch(function(err) {
+                        console.error(err);
+                        alert('Error de conexión');
+                        btn.disabled = false;
+                        btn.innerText = txtBtn;
+                    });
+                }
+            </script>
+
+        </t>
+    </template>
+</odoo>

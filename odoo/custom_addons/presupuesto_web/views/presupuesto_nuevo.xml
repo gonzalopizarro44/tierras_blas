@@ -1,5 +1,5 @@
 <odoo>
-    <template id="nueva_venta_template" name="Registrar Nueva Venta">
+    <template id="presupuesto_nuevo_template" name="Registrar Nuevo Presupuesto">
 
         <t t-call="website.layout">
 
@@ -386,21 +386,9 @@
 
                     <!-- HEADER -->
                     <div class="mb-4">
-                        <a href="/ventas" class="text-muted" style="text-decoration: none;">← Volver al Panel</a>
-                        <h1 class="nv-title mt-2">Registrar Nueva Venta</h1>
+                        <a href="/presupuestos" class="text-muted" style="text-decoration: none;">← Volver al Panel</a>
+                        <h1 class="nv-title mt-2">Crear Nuevo Presupuesto</h1>
                     </div>
-
-                    <!-- BANNER PRESUPUESTO PRE-CARGADO -->
-                    <t t-if="presupuesto_data">
-                        <div class="nv-alert nv-alert-info d-flex align-items-center gap-3">
-                            <span style="font-size: 1.5rem;">📋</span>
-                            <div>
-                                <h5 class="mb-1" style="font-weight: 700;">Presupuesto <t t-esc="presupuesto_data['name']"/> pre-cargado</h5>
-                                <p class="mb-0">Revisá las cantidades y precios. Podés editarlos antes de confirmar la venta.</p>
-                                <p class="mb-0">Seleccioná el metodo de pago elegido para esta venta</p>
-                            </div>
-                        </div>
-                    </t>
 
                     <!-- SECCIÓN 1: CLIENTE -->
                     <div class="nv-card">
@@ -493,33 +481,9 @@
 
                     </div>
 
-                    <!-- SECCIÓN 3: MÉTODO DE PAGO -->
+                    <!-- SECCIÓN 3: RESUMEN Y CONFIRMACIÓN -->
                     <div class="nv-card">
-                        <h3 class="nv-section-title">3. Método de Pago</h3>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <label class="nv-label">Seleccionar Método</label>
-                                <select id="paymentMethodSelect" class="form-select">
-                                    <option value="">-- Sin especificar --</option>
-                                    <!-- Diario Real -->
-                                    <t t-foreach="journals" t-as="j">
-                                        <option t-if="'efectivo' in j.name.lower()" t-att-value="j.id">
-                                            Efectivo
-                                        </option>
-                                    </t>
-                                    <!-- Opciones Visuales / Fake -->
-                                    <option value="estetico_transferencia">Transferencia</option>
-                                    <option value="estetico_qr">QR</option>
-                                </select>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- SECCIÓN 4: RESUMEN Y CONFIRMACIÓN -->
-                    <div class="nv-card">
-                        <h3 class="nv-section-title">4. Resumen y Guardar</h3>
+                        <h3 class="nv-section-title">3. Resumen y Guardar</h3>
 
                         <!-- Resumen de totales -->
                         <div class="nv-resumen" id="resumenTotales" style="display: none;">
@@ -539,10 +503,10 @@
 
                         <!-- Botones de acción -->
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn nv-btn nv-btn-success nv-btn-lg" onclick="guardarVenta()" style="flex: 1; padding: 0.75rem;">
-                                ✓ Registrar y Confirmar Venta
+                            <button type="button" class="btn nv-btn nv-btn-success nv-btn-lg" onclick="guardarPresupuesto()" style="flex: 1; padding: 0.75rem;">
+                                ✓ Crear Presupuesto
                             </button>
-                            <a href="/ventas" class="btn nv-btn nv-btn-secondary" style="padding: 0.75rem;">
+                            <a href="/presupuestos" class="btn nv-btn nv-btn-secondary" style="padding: 0.75rem;">
                                 ← Cancelar
                             </a>
                         </div>
@@ -556,11 +520,10 @@
             <script type="text/javascript">
 
                 // Estado interno de la venta
-                let ventaData = {
+                let presupuestoData = {
                     cliente_id: null,
                     lineas: [],
-                    journal_id: null,
-                    presupuesto_id: null
+                    
                 };
 
                 // Productos disponibles (para búsqueda rápida)
@@ -593,8 +556,8 @@
                     const term = this.value.trim();
 
                     // Si ya había un cliente seleccionado y el usuario borra, limpiar selección
-                    if (ventaData.cliente_id) {
-                        ventaData.cliente_id = null;
+                    if (presupuestoData.cliente_id) {
+                        presupuestoData.cliente_id = null;
                         clienteHidden.value = '';
                         clienteContainer.classList.remove('has-selection');
                         clienteInput.classList.remove('has-value');
@@ -609,7 +572,7 @@
 
                 // Focus: mostrar dropdown con resultados
                 clienteInput.addEventListener('focus', function() {
-                    if (!ventaData.cliente_id) {
+                    if (!presupuestoData.cliente_id) {
                         if (clienteResults.length > 0) {
                             clienteDropdown.classList.add('show');
                         } else {
@@ -667,7 +630,7 @@
                     clienteDropdown.classList.add('show');
                     clienteActiveIndex = -1;
 
-                    fetch('/ventas/buscar_clientes', {
+                    fetch('/presupuestos/buscar_clientes', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -718,7 +681,7 @@
 
                 function seleccionarCliente(id, elem) {
                     const label = elem.getAttribute('data-label');
-                    ventaData.cliente_id = id;
+                    presupuestoData.cliente_id = id;
                     clienteHidden.value = id;
                     clienteInput.value = label;
                     clienteInput.classList.add('has-value');
@@ -734,7 +697,7 @@
                 }
 
                 function limpiarCliente() {
-                    ventaData.cliente_id = null;
+                    presupuestoData.cliente_id = null;
                     clienteHidden.value = '';
                     clienteInput.value = '';
                     clienteInput.classList.remove('has-value');
@@ -756,7 +719,7 @@
                         return;
                     }
 
-                    fetch('/ventas/crear_cliente', {
+                    fetch('/presupuestos/crear_cliente', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -769,7 +732,7 @@
                     .then(function(data) {
                         if (data.result &amp;&amp; data.result.success) {
                             // Seleccionar el nuevo cliente automáticamente
-                            ventaData.cliente_id = data.result.id;
+                            presupuestoData.cliente_id = data.result.id;
                             clienteHidden.value = data.result.id;
                             clienteInput.value = data.result.nombre;
                             clienteInput.classList.add('has-value');
@@ -819,17 +782,8 @@
                     }
 
                     // ╔════════════════════════════════════════════════════════════╗
-                    // ║ VALIDACIÓN DE STOCK - BLINDAJE CONTRA SOBREVENTA          ║
+                    // ║ PRESUPUESTOS NO REQUIEREN VALIDACIÓN DE STOCK              ║
                     // ╚════════════════════════════════════════════════════════════╝
-                    if (!producto.isService) {
-                        // Solo validar stock si NO es un servicio
-                        const stockDisponible = parseFloat(select.options[select.selectedIndex].getAttribute('data-stock')) || 0;
-                        
-                        if (cantidad &gt; stockDisponible) {
-                            alert('La cantidad a vender debe ser igual o menor a ' + stockDisponible.toFixed(0) + ' u.');
-                            return;
-                        }
-                    }
 
                     // Crear línea
                     const linea = {
@@ -841,7 +795,7 @@
                         subtotal: cantidad * producto.price
                     };
 
-                    ventaData.lineas.push(linea);
+                    presupuestoData.lineas.push(linea);
 
                     // Limpiar selects
                     select.value = '';
@@ -852,7 +806,7 @@
                 }
 
                 function eliminarLinea(id) {
-                    ventaData.lineas = ventaData.lineas.filter(l => l.id !== id);
+                    presupuestoData.lineas = presupuestoData.lineas.filter(l => l.id !== id);
                     actualizarVistaLineas();
                     actualizarResumen();
                 }
@@ -860,68 +814,39 @@
                 function actualizarVistaLineas() {
                     const container = document.getElementById('lineasProductos');
 
-                    if (ventaData.lineas.length === 0) {
-                        container.innerHTML = '<p class="text-muted text-center py-4">No hay productos agregados aún</p>';
+                    if (presupuestoData.lineas.length === 0) {
+                        container.innerHTML = '&lt;p class="text-muted text-center py-4"&gt;No hay productos agregados aún&lt;/p&gt;';
                         return;
                     }
 
-                    container.innerHTML = ventaData.lineas.map(linea => `
-                        <div class="nv-linea" data-id="${linea.id}">
-                            <div class="nv-linea-header">
-                                <div class="nv-linea-producto">${linea.product_name}</div>
-                                <div class="nv-linea-close" onclick="eliminarLinea(${linea.id})">✕</div>
-                            </div>
-                            <div class="nv-linea-totales">
-                                <div class="nv-linea-total-item">
-                                    <div class="nv-linea-total-label">Cantidad</div>
-                                    <input type="number" step="0.01" class="form-control form-control-sm text-center fw-bold" 
-                                           style="color: var(--brand-primary); background: white;"
-                                           value="${linea.quantity}" 
-                                           onchange="editarLinea(${linea.id}, 'quantity', this.value)"/>
-                                </div>
-                                <div class="nv-linea-total-item">
-                                    <div class="nv-linea-total-label">Precio Unit.</div>
-                                    <input type="number" step="0.01" class="form-control form-control-sm text-center fw-bold" 
-                                           style="color: var(--brand-primary); background: white;"
-                                           value="${linea.price_unit}" 
-                                           onchange="editarLinea(${linea.id}, 'price_unit', this.value)"/>
-                                </div>
-                                <div class="nv-linea-total-item">
-                                    <div class="nv-linea-total-label">Subtotal</div>
-                                    <div class="nv-linea-total-value" id="subtotal-${linea.id}">$${linea.subtotal.toFixed(2)}</div>
-                                </div>
-                            </div>
-                        </div>
+                    container.innerHTML = presupuestoData.lineas.map(linea => `
+                        &lt;div class="nv-linea"&gt;
+                            &lt;div class="nv-linea-header"&gt;
+                                &lt;div class="nv-linea-producto"&gt;${linea.product_name}&lt;/div&gt;
+                                &lt;div class="nv-linea-close" onclick="eliminarLinea(${linea.id})"&gt;✕&lt;/div&gt;
+                            &lt;/div&gt;
+                            &lt;div class="nv-linea-totales"&gt;
+                                &lt;div class="nv-linea-total-item"&gt;
+                                    &lt;div class="nv-linea-total-label"&gt;Cantidad&lt;/div&gt;
+                                    &lt;div class="nv-linea-total-value"&gt;${linea.quantity.toFixed(2)}&lt;/div&gt;
+                                &lt;/div&gt;
+                                &lt;div class="nv-linea-total-item"&gt;
+                                    &lt;div class="nv-linea-total-label"&gt;Precio Unit.&lt;/div&gt;
+                                    &lt;div class="nv-linea-total-value"&gt;$${linea.price_unit.toFixed(2)}&lt;/div&gt;
+                                &lt;/div&gt;
+                                &lt;div class="nv-linea-total-item"&gt;
+                                    &lt;div class="nv-linea-total-label"&gt;Subtotal&lt;/div&gt;
+                                    &lt;div class="nv-linea-total-value"&gt;$${linea.subtotal.toFixed(2)}&lt;/div&gt;
+                                &lt;/div&gt;
+                            &lt;/div&gt;
+                        &lt;/div&gt;
                     `).join('');
                 }
 
-                function editarLinea(id, campo, valor) {
-                    const linea = ventaData.lineas.find(l => l.id === id);
-                    if (!linea) return;
-
-                    const numValor = parseFloat(valor) || 0;
-                    
-                    if (campo === 'quantity') {
-                        // Opcional: Validar stock aquí también si no es servicio
-                        linea.quantity = numValor;
-                    } else if (campo === 'price_unit') {
-                        linea.price_unit = numValor;
-                    }
-
-                    linea.subtotal = linea.quantity * linea.price_unit;
-                    
-                    // Actualizar solo el subtotal en el DOM para no perder el foco si es posible, 
-                    // pero para simplificar re-renderizamos el resumen
-                    const subtotalElem = document.getElementById(`subtotal-${id}`);
-                    if (subtotalElem) subtotalElem.innerText = '$' + linea.subtotal.toFixed(2);
-                    
-                    actualizarResumen();
-                }
-
                 function actualizarResumen() {
-                    const cantProductos = ventaData.lineas.length;
-                    const cantTotal = ventaData.lineas.reduce((sum, l) => sum + l.quantity, 0);
-                    const total = ventaData.lineas.reduce((sum, l) => sum + l.subtotal, 0);
+                    const cantProductos = presupuestoData.lineas.length;
+                    const cantTotal = presupuestoData.lineas.reduce((sum, l) => sum + l.quantity, 0);
+                    const total = presupuestoData.lineas.reduce((sum, l) => sum + l.subtotal, 0);
 
                     document.getElementById('resumenCantProductos').innerText = cantProductos;
                     document.getElementById('resumenCantTotal').innerText = cantTotal.toFixed(2);
@@ -935,25 +860,19 @@
                     }
                 }
 
-                function guardarVenta() {
+                function guardarPresupuesto() {
                     // Validaciones
-                    if (!ventaData.cliente_id) {
+                    if (!presupuestoData.cliente_id) {
                         alert('Selecciona un cliente');
                         return;
                     }
 
-                    if (ventaData.lineas.length === 0) {
+                    if (presupuestoData.lineas.length === 0) {
                         alert('Agrega al menos un producto');
                         return;
                     }
 
-                    // Validar método de pago obligatorio
-                    const paymentSelect = document.getElementById('paymentMethodSelect');
-                    if (!paymentSelect.value) {
-                        alert('Selecciona un método de pago');
-                        paymentSelect.focus();
-                        return;
-                    }
+                    
 
                     const btn = event.target;
                     const txtBtn = btn.innerText;
@@ -961,24 +880,23 @@
                     btn.innerHTML = '&lt;span class="nv-spinner" style="margin-right: 0.5rem;"&gt;&lt;/span&gt; Procesando...';
 
                     // Convertir lineas al formato esperado
-                    const lineas = ventaData.lineas.map(l => ({
+                    const lineas = presupuestoData.lineas.map(l => ({
                         product_id: l.product_id,
                         quantity: l.quantity
                     }));
 
                     // Llamada AJAX
-                    fetch('/ventas/crear', {
+                    fetch('/presupuestos/crear', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             jsonrpc: "2.0",
                             method: "call",
                             params: {
-                                cliente_id: ventaData.cliente_id,
+                                cliente_id: presupuestoData.cliente_id,
                                 lineas: lineas,
-                                origen: 'admin',
-                                journal_id: ventaData.journal_id,
-                                presupuesto_id: ventaData.presupuesto_id
+                                
+                                
                             }
                         })
                     })
@@ -986,7 +904,7 @@
                     .then(data => {
                         if (data.result &amp;&amp; data.result.success) {
                             alert(data.result.message);
-                            window.location.href = data.result.url || '/ventas';
+                            window.location.href = data.result.url || '/presupuestos';
                         } else {
                             alert('Error: ' + (data.result ? data.result.message : 'Unknown'));
                             btn.disabled = false;
@@ -1004,56 +922,7 @@
                 // Inicializar resumen
                 actualizarResumen();
 
-                // ╔════════════════════════════════════════════════════════════╗
-                // ║ PRE-CARGA DE DATOS (SI VIENE DE PRESUPUESTO)             ║
-                // ╚════════════════════════════════════════════════════════════╝
-                <t t-if="presupuesto_data">
-                    (function() {
-                        const pData = <t t-raw="json.dumps(presupuesto_data)"/>;
-                        
-                        // 1. Guardar ID del presupuesto original
-                        ventaData.presupuesto_id = pData.id;
-
-                        // 2. Seleccionar Cliente
-                        if (pData.cliente_id) {
-                            ventaData.cliente_id = pData.cliente_id;
-                            document.getElementById('clienteSelectValue').value = pData.cliente_id;
-                            document.getElementById('clienteSearchInput').value = pData.cliente_nombre;
-                            document.getElementById('clienteSearchInput').classList.add('has-value');
-                            document.getElementById('clienteAutocomplete').classList.add('has-selection');
-                            document.getElementById('clienteInfo').style.display = 'block';
-                            document.getElementById('clienteInfoNombre').innerText = pData.cliente_nombre;
-                        }
-
-                        // 2. Cargar Líneas
-                        if (pData.lineas &amp;&amp; pData.lineas.length > 0) {
-                            pData.lineas.forEach((l, index) => {
-                                ventaData.lineas.push({
-                                    id: Date.now() + index, // IDs únicos
-                                    product_id: l.product_id,
-                                    product_name: l.product_name,
-                                    quantity: l.quantity,
-                                    price_unit: l.price_unit,
-                                    subtotal: l.subtotal
-                                });
-                            });
-                            actualizarVistaLineas();
-                            actualizarResumen();
-                        }
-                    })();
-                </t>
-
-                // Escucha cambios en el método de pago
-                document.getElementById('paymentMethodSelect').addEventListener('change', function() {
-                    const val = this.value;
-                    if (!val) {
-                        ventaData.journal_id = null;
-                    } else if (!isNaN(val)) {
-                        ventaData.journal_id = parseInt(val);
-                    } else {
-                        ventaData.journal_id = val; // valor estético (string)
-                    }
-                });
+                
 
             </script>
 
