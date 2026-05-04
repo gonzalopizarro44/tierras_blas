@@ -7,6 +7,7 @@
                 <div class="dropdown-divider"/>
                 <div class="dropdown-header fw-bold text-dark small py-1">Reportes</div>
                 <a href="/compras" role="menuitem" class="dropdown-item ps-3 py-1">Compras</a>
+                <a href="/presupuestos" role="menuitem" class="dropdown-item ps-3 py-1">Presupuestos</a>
                 <a href="/ventas" role="menuitem" class="dropdown-item ps-3 py-1">Ventas</a>
                 <a href="/inventario" role="menuitem" class="dropdown-item ps-3 py-1">Inventario</a>
                 <a href="/panel" role="menuitem" class="dropdown-item ps-3 py-1">Panel</a>
